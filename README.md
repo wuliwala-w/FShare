@@ -1,5 +1,5 @@
 ###FShare项目
-web后端采用go语言
+web后端采用go
 
 创建申请createApply
 127.0.0.1:8080/browse/apply

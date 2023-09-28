@@ -2,28 +2,42 @@ package models
 
 import (
 	"FShare/dao"
+	"fmt"
+	"math/rand"
+	"strconv"
+	"time"
 )
 
 type File struct {
-	FileOwner string `json:"fileOwner"`
-	FileID    int    `json:"id"`
-	Name      string `json:"name"`
-	Status    int    `json:"status"` //1:没被申请；2：正在被申请中；3：申请被拒绝；4：可用不可转发；5：可用可转发
+	FileID      string `json:"id" gorm:"primary_key"`
+	Name        string `json:"name"`
+	FileOwner   string `json:"fileOwner"`
+	Description string `json:"description"`
+	Size        string `json:"size"`
+	Time        string `json:"time"`
+	Status      int    `json:"status"` //1:没被申请；2：正在被申请中；3：申请被拒绝；4：可用不可转发；5：可用可转发
 }
 
 type Apply struct {
 	ApplyOwner string `json:"applyOwner"`
 	FileOwner  string `json:"fileOwner"`
-	Timestamp  string `json:"timestamp"`
-	FileID     int    `json:"fileID"`
+	Time       string `json:"time"`
+	FileID     string `json:"fileID"`
 	Status     int    `json:"status"`
 }
+
+var Node string = "A"
 
 /*
 	Todo这个model的增删改查放在这里
 */
 
 func UploadFiles(file *File) (err error) {
+	t := time.Now()
+	file.Time = t.Format("2006-01-02 15:04:05")
+	timestamp := strconv.FormatInt(t.UTC().UnixNano(), 10)
+	randnum := fmt.Sprintf("%04v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(10000))
+	file.FileID = Node + timestamp + randnum
 	if err = dao.DB.Create(&file).Error; err != nil {
 		return err
 	}

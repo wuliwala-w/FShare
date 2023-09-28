@@ -2,7 +2,9 @@ package controller
 
 import (
 	"FShare/models"
+	"fmt"
 	"github.com/gin-gonic/gin"
+	"log"
 	"net/http"
 )
 
@@ -95,5 +97,46 @@ func DeleteApply(context *gin.Context) {
 	} else {
 		context.JSON(http.StatusOK, gin.H{id: "deleted"})
 	}
+
+}
+
+// 将上传的文件保存到本地
+func UploadFileLocal(context *gin.Context) {
+	//1.将上传的文件取出来
+	f, err := context.FormFile("FileVerify")
+	if err != nil {
+		context.JSON(http.StatusOK, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+	//2.将文件保存到本地缓存区
+	log.Println(f.Filename)
+	dst := fmt.Sprintf("D/Reaserch/System development/FShare/Verify/%s", f.Filename) //设置核验文件保存的本地地址路径
+	//将上传的文件保存到指定的本地地址，并返回响应
+	if err = context.SaveUploadedFile(f, dst); err != nil {
+		context.JSON(http.StatusOK, gin.H{
+			"error": err.Error(),
+		})
+		return
+	} else {
+		context.JSON(http.StatusOK, gin.H{
+			"status": "Upload success",
+		})
+	}
+}
+
+// 提取文件水印
+func GetFingerPrint(context *gin.Context) {
+
+}
+
+// 提取区块链上文件的信息
+func TraceBackOnChain(context *gin.Context) {
+
+}
+
+// 展示详细的信息
+func DetailInformation(context *gin.Context) {
 
 }

@@ -26,7 +26,7 @@ type Apply struct {
 	Status     int    `json:"status"`
 }
 
-var Node string = "A"
+var Node string = "A" //节点名
 
 /*
 	Todo这个model的增删改查放在这里

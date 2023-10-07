@@ -3,7 +3,10 @@ package models
 import (
 	"FShare/dao"
 	"fmt"
+	"github.com/gin-gonic/gin"
+	"log"
 	"math/rand"
+	"mime/multipart"
 	"strconv"
 	"time"
 )
@@ -89,5 +92,12 @@ func UpdateATodo(todo *File) (err error) {
 
 func DeleteATodoByID(id string) (err error) {
 	err = dao.DB.Where("id=?", id).Delete(&File{}).Error
+	return
+}
+
+func SaveFilelocal(context *gin.Context, f *multipart.FileHeader) (err error) {
+	log.Println(f.Filename)
+	dst := fmt.Sprintf("D/Reaserch/System development/FShare/Verify/%s", f.Filename) //设置核验文件保存的本地地址路径
+	err = context.SaveUploadedFile(f, dst)
 	return
 }

@@ -6,7 +6,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"log"
 	"math/rand"
-	"mime/multipart"
 	"net/http"
 	"strconv"
 	"time"
@@ -118,11 +117,17 @@ func DeleteATodoByID(id string) (err error) {
 	return
 }
 
-func SaveFilelocal(context *gin.Context, f *multipart.FileHeader) (err error) {
-	log.Println(f.Filename)
-	dst := fmt.Sprintf("./Verify/%s", f.Filename) //设置核验文件保存的本地地址路径
-	if err = context.SaveUploadedFile(f, dst); err != nil {
-		return err
+func SaveFilelocal(context *gin.Context) (err error) {
+	//将上传的文件取出来
+	f, err := context.FormFile("FileVerify")
+	if err != nil {
+		context.JSON(http.StatusOK, gin.H{"message": err.Error()})
+	} else { //将上传的文件保存到指定的本地地址，并返回响应
+		log.Println(f.Filename)
+		dst := fmt.Sprintf("./verifyfile/%s", f.Filename) //设置核验文件保存的本地地址路径z
+		if err = context.SaveUploadedFile(f, dst); err != nil {
+			return err
+		}
 	}
 	return
 }

@@ -34,6 +34,10 @@ func IndexHandler(context *gin.Context) {
 	}
 }
 
+func IndexHandlerv4(context *gin.Context) {
+	context.HTML(http.StatusOK, "verify.html", nil)
+}
+
 func UploadFile(context *gin.Context) {
 	var file models.File
 	context.BindJSON(&file)
@@ -124,16 +128,8 @@ func DeleteApply(context *gin.Context) {
 
 // 将上传的文件保存到本地
 func UploadFileLocal(context *gin.Context) {
-	//将上传的文件取出来
-	f, err := context.FormFile("FileVerify")
-	if err != nil {
-		context.JSON(http.StatusOK, gin.H{"message": err.Error()})
-		return
-	}
-	//将上传的文件保存到指定的本地地址，并返回响应
-	if err = models.SaveFilelocal(context, f); err != nil {
+	if err := models.SaveFilelocal(context); err != nil {
 		context.JSON(http.StatusOK, gin.H{"error": err.Error()})
-		return
 	} else {
 		context.JSON(http.StatusOK, gin.H{"status": "Upload success"})
 	}

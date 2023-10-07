@@ -83,7 +83,7 @@ func GetFileByID(context *gin.Context) {
 	}
 }
 
-func UpdateTask(context *gin.Context) {
+func UpdateStatus(context *gin.Context) {
 	//拿到请求里的id
 	id, ok := context.Params.Get("id")
 	if !ok {
@@ -91,19 +91,19 @@ func UpdateTask(context *gin.Context) {
 		return
 	}
 	//查询数据库是否有这个id
-	todo, err := models.GetFileByID(id)
+	file, err := models.GetFileByID(id)
 	if err != nil {
 		context.JSON(http.StatusOK, gin.H{"error": err.Error()})
 		return
 	}
 	//放入todo变量
-	context.BindJSON(&todo)
+	context.BindJSON(&file)
 	//新信息保存到数据库
-	err = models.UpdateATodo(todo)
+	err = models.UpdateFile(file)
 	if err != nil {
 		context.JSON(http.StatusOK, gin.H{"error": err.Error()})
 	} else {
-		context.JSON(http.StatusOK, todo)
+		context.JSON(http.StatusOK, file)
 	}
 }
 

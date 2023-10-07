@@ -81,8 +81,8 @@ func GetTodoByID(id string) (todo *File, err error) {
 	return
 }
 
-func UpdateATodo(todo *File) (err error) {
-	err = dao.DB.Save(todo).Error
+func UpdateFile(file *File) (err error) {
+	err = dao.DB.Save(file).Error
 	return err
 
 }

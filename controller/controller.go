@@ -12,22 +12,31 @@ url     --> controller --> logic   --> model
 */
 
 func IndexHandler(context *gin.Context) {
-	context.HTML(http.StatusOK, "index.html", nil)
+	//context.HTML(http.StatusOK, "index.html", nil)
 	//这里更改节点名称，服务器分别为ABCDE，用models.Node
-	myApply, err := models.GetMyApply(models.Node)     //获取我的申请
-	applyList, err := models.GetApplyList(models.Node) //获取别人申请我的信息
+	myApply, err := models.GetMyApply() //获取我的申请
 	if err != nil {
 		context.JSON(http.StatusOK, gin.H{"error": err.Error()})
 	} else {
 		context.JSON(http.StatusOK, myApply)
+	}
+	applyList, err := models.GetApplyList() //获取别人申请我的信息
+	if err != nil {
+		context.JSON(http.StatusOK, gin.H{"error": err.Error()})
+	} else {
 		context.JSON(http.StatusOK, applyList)
+	}
+	fileList, err := models.GetFileList()
+	if err != nil {
+		context.JSON(http.StatusOK, gin.H{"error": err.Error()})
+	} else {
+		context.JSON(http.StatusOK, fileList)
 	}
 }
 
 func UploadFile(context *gin.Context) {
 	var file models.File
 	context.BindJSON(&file)
-	//
 	if err := models.UploadFiles(&file, context); err != nil {
 		context.JSON(http.StatusOK, gin.H{"error": err.Error()})
 	} else {
@@ -42,7 +51,7 @@ func CreateApply(context *gin.Context) {
 	context.BindJSON(&file)
 	//2.存入数据库
 	//3.返回响应
-	if err := models.CreateAplly(&file); err != nil {
+	if err := models.CreateApply(&file); err != nil {
 		context.JSON(http.StatusOK, gin.H{"error": err.Error()})
 	} else {
 		context.JSON(http.StatusOK, file)
@@ -58,6 +67,22 @@ func GetFileList(context *gin.Context) {
 	}
 }
 
+func GetFileByID(context *gin.Context) {
+	id, ok := context.Params.Get("id")
+	if !ok {
+		context.JSON(http.StatusOK, gin.H{"error": "id not exist"})
+		return
+	}
+	//查询数据库是否有这个id
+	file, err := models.GetFileByID(id)
+	if err != nil {
+		context.JSON(http.StatusOK, gin.H{"error": err.Error()})
+		return
+	} else {
+		context.JSON(http.StatusOK, file)
+	}
+}
+
 func UpdateTask(context *gin.Context) {
 	//拿到请求里的id
 	id, ok := context.Params.Get("id")
@@ -66,7 +91,7 @@ func UpdateTask(context *gin.Context) {
 		return
 	}
 	//查询数据库是否有这个id
-	todo, err := models.GetTodoByID(id)
+	todo, err := models.GetFileByID(id)
 	if err != nil {
 		context.JSON(http.StatusOK, gin.H{"error": err.Error()})
 		return

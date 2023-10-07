@@ -8,8 +8,8 @@ import (
 func SetupRouter() *gin.Engine {
 
 	r := gin.Default()
-	r.Static("/static", "static")
-	r.LoadHTMLGlob("templates/*")
+	//r.Static("/static", "static")
+	//r.LoadHTMLGlob("templates/*")
 	r.GET("/myfile", controller.IndexHandler)
 
 	//页面一路由
@@ -19,10 +19,8 @@ func SetupRouter() *gin.Engine {
 
 		//查看所有待办
 		v1Group.GET("/todo", controller.GetFileList)
-		////查看一个待办
-		//v1Group.GET("/todo/:id", func(context *gin.Context) {
-		//
-		//})
+		//查看一个待办
+		v1Group.GET("/onefile/:id", controller.GetFileByID)
 		//修改待办
 		v1Group.PUT("/applied/:id", controller.UpdateTask)
 		//删除

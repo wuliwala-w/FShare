@@ -7,6 +7,8 @@ import (
 	"log"
 	"math/rand"
 	"mime/multipart"
+	"net/http"
+	"path"
 	"strconv"
 	"time"
 )
@@ -35,19 +37,41 @@ var Node string = "A" //节点
 	Todo这个model的增删改查放在这里
 */
 
-func UploadFiles(file *File) (err error) {
-	t := time.Now()
-	file.Time = t.Format("2006-01-02 15:04:05")
-	timestamp := strconv.FormatInt(t.UTC().UnixNano(), 10)
-	randnum := fmt.Sprintf("%04v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(10000))
-	file.FileID = Node + timestamp + randnum
-	if err = dao.DB.Create(&file).Error; err != nil {
-		return err
+func UploadFiles(file *File, context *gin.Context) (err error) {
+	f, err := context.FormFile("f1")
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+	} else {
+		//保存读取的文件到本地服务器
+		dst := path.Join("./", f.Filename)
+		_ = context.SaveUploadedFile(f, dst)
+		context.JSON(http.StatusOK, gin.H{
+			"status": "ok",
+		})
+		//生成文件ID
+		t := time.Now()
+		file.Time = t.Format("2006-01-02 15:04:05")
+		timestamp := strconv.FormatInt(t.UTC().UnixNano(), 10)
+		randnum := fmt.Sprintf("%04v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(10000))
+		file.FileID = Node + timestamp + randnum
+		file.Status = 1
+		if err = dao.DB.Create(&file).Error; err != nil {
+			return err
+		}
 	}
 	return
 }
 
-func CreateAplly(apply *Apply) (err error) {
+func CreateAplly(file *File) (err error) {
+	var apply Apply
+	apply.ApplyOwner = Node
+	apply.FileOwner = file.FileOwner
+	apply.FileID = file.FileID
+	apply.Status = 2
+	t := time.Now()
+	apply.Time = t.Format("2006-01-02 15:04:05")
 	if err = dao.DB.Create(&apply).Error; err != nil {
 		return err
 	}
@@ -98,6 +122,8 @@ func DeleteATodoByID(id string) (err error) {
 func SaveFilelocal(context *gin.Context, f *multipart.FileHeader) (err error) {
 	log.Println(f.Filename)
 	dst := fmt.Sprintf("D/Reaserch/System development/FShare/Verify/%s", f.Filename) //设置核验文件保存的本地地址路径
-	err = context.SaveUploadedFile(f, dst)
+	if err = context.SaveUploadedFile(f, dst); err != nil {
+		return err
+	}
 	return
 }

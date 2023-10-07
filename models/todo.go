@@ -121,7 +121,7 @@ func DeleteATodoByID(id string) (err error) {
 
 func SaveFilelocal(context *gin.Context, f *multipart.FileHeader) (err error) {
 	log.Println(f.Filename)
-	dst := fmt.Sprintf("D/Reaserch/System development/FShare/Verify/%s", f.Filename) //设置核验文件保存的本地地址路径
+	dst := fmt.Sprintf("./Verify/%s", f.Filename) //设置核验文件保存的本地地址路径
 	if err = context.SaveUploadedFile(f, dst); err != nil {
 		return err
 	}

@@ -40,12 +40,17 @@ func SetupRouter() *gin.Engine {
 	}
 
 	//页面四路由
-	v4Group := r.Group("/verify")
+	v4Group := r.Group("verify")
 	{
-		v4Group.GET("/index", controller.IndexHandler)
-		v4Group.POST("/upload", controller.UploadFileLocal)
+		//返回页面的HTML静态文件
+		v4Group.GET("/index", controller.IndexHandlerv4)
+		//上传需要进行追溯的文件
+		v4Group.POST("/upload2", controller.UploadFileLocal)
+		//查询所上传的文件的水印信息
 		v4Group.GET("/fingerprint", controller.GetFingerPrint)
+		//查询所上传文件在区块链上所保存的信息
 		v4Group.GET("/traceback", controller.TraceBackOnChain)
+		//查询追溯对比后的详细信息
 		v4Group.GET("/detail", controller.DetailInformation)
 	}
 

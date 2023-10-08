@@ -4,6 +4,7 @@ import (
 	"FShare/dao"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"log"
 	"math/rand"
 	"net/http"
 	"strconv"
@@ -113,5 +114,20 @@ func UpdateFile(file *File) (err error) {
 
 func DeleteATodoByID(id string) (err error) {
 	err = dao.DB.Where("id=?", id).Delete(&File{}).Error
+	return
+}
+
+func SaveFilelocal(context *gin.Context) (err error) {
+	//将上传的文件取出来
+	f, err := context.FormFile("FileVerify")
+	if err != nil {
+		context.JSON(http.StatusOK, gin.H{"message": err.Error()})
+	} else { //将上传的文件保存到指定的本地地址，并返回响应
+		log.Println(f.Filename)
+		dst := fmt.Sprintf("./verifyfile/%s", f.Filename) //设置核验文件保存的本地地址路径z
+		if err = context.SaveUploadedFile(f, dst); err != nil {
+			return err
+		}
+	}
 	return
 }

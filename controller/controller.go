@@ -2,9 +2,7 @@ package controller
 
 import (
 	"FShare/models"
-	"fmt"
 	"github.com/gin-gonic/gin"
-	"log"
 	"net/http"
 )
 
@@ -34,6 +32,10 @@ func IndexHandler(context *gin.Context) {
 	} else {
 		context.JSON(http.StatusOK, fileList)
 	}
+}
+
+func IndexHandlerv4(context *gin.Context) {
+	context.HTML(http.StatusOK, "verify.html", nil)
 }
 
 func UploadFile(context *gin.Context) {
@@ -126,27 +128,10 @@ func DeleteApply(context *gin.Context) {
 
 // 将上传的文件保存到本地
 func UploadFileLocal(context *gin.Context) {
-	//1.将上传的文件取出来
-	f, err := context.FormFile("FileVerify")
-	if err != nil {
-		context.JSON(http.StatusOK, gin.H{
-			"message": err.Error(),
-		})
-		return
-	}
-	//2.将文件保存到本地缓存区
-	log.Println(f.Filename)
-	dst := fmt.Sprintf("D/Reaserch/System development/FShare/Verify/%s", f.Filename) //设置核验文件保存的本地地址路径
-	//将上传的文件保存到指定的本地地址，并返回响应
-	if err = context.SaveUploadedFile(f, dst); err != nil {
-		context.JSON(http.StatusOK, gin.H{
-			"error": err.Error(),
-		})
-		return
+	if err := models.SaveFilelocal(context); err != nil {
+		context.JSON(http.StatusOK, gin.H{"error": err.Error()})
 	} else {
-		context.JSON(http.StatusOK, gin.H{
-			"status": "Upload success",
-		})
+		context.JSON(http.StatusOK, gin.H{"status": "Upload success"})
 	}
 }
 

@@ -7,6 +7,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"path"
 	"strconv"
 	"time"
 )
@@ -35,19 +36,27 @@ var Node string = "A" //节点
 	Todo这个model的增删改查放在这里
 */
 
-func UploadFiles(file *File, context *gin.Context) (err error) {
-	//f, err := context.FormFile("f1")
+func UploadFiles(context *gin.Context) (err error) {
+	var file File
+
+	file.FileOwner = context.PostForm("fileOwner")
+	file.Name = context.PostForm("name")
+	file.Description = context.PostForm("description")
+	file.Size = context.PostForm("size")
+	file.Status, _ = strconv.Atoi(context.PostForm("status"))
+
+	f, err := context.FormFile("f1")
 	if err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
 	} else {
 		//保存读取的文件到本地服务器
-		//dst := path.Join("./", f.Filename)
-		//_ = context.SaveUploadedFile(f, dst)
-		//context.JSON(http.StatusOK, gin.H{
-		//	"status": "ok",
-		//})
+		dst := path.Join("./", f.Filename)
+		_ = context.SaveUploadedFile(f, dst)
+		context.JSON(http.StatusOK, gin.H{
+			"status": "ok",
+		})
 		//生成文件ID
 		t := time.Now()
 		file.Time = t.Format("2006-01-02 15:04:05")

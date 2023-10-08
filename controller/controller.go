@@ -39,12 +39,12 @@ func IndexHandlerv4(context *gin.Context) {
 }
 
 func UploadFile(context *gin.Context) {
-	var file models.File
-	context.BindJSON(&file)
-	if err := models.UploadFiles(&file, context); err != nil {
+	//var file models.File
+	//context.BindJSON(&file)
+	if err := models.UploadFiles(context); err != nil {
 		context.JSON(http.StatusOK, gin.H{"error": err.Error()})
 	} else {
-		context.JSON(http.StatusOK, file)
+		context.JSON(http.StatusOK, gin.H{"file": "success"})
 	}
 }
 

@@ -15,16 +15,18 @@ func SetupRouter() *gin.Engine {
 	//页面一路由
 	v1Group := r.Group("myfile")
 	{
-		//添加
 
 		//查看所有信息
-		v1Group.GET("/todo", controller.GetFileList)
+		//v1Group.GET("/to", controller.GetFileList)
 		//查看一个文件信息
 		v1Group.GET("/onefile/:id", controller.GetFileByID)
 		//按钮触发更改状态
 		v1Group.PUT("/applied/:id", controller.UpdateStatus)
+		//更改申请状态
+		v1Group.PUT("/update/:id/:applyOwner", controller.UpdateApplyStatus)
 		//删除
-		v1Group.DELETE("/todo/:id", controller.DeleteApply)
+		v1Group.DELETE("/deleteapply/:id/:applyOwner", controller.DeleteApply)
+		v1Group.DELETE("/deletefile/:id", controller.DeleteAFile)
 	}
 
 	//页面二路由

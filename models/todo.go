@@ -23,10 +23,10 @@ type File struct {
 }
 
 type Apply struct {
-	ApplyOwner string `json:"applyOwner"`
+	ApplyOwner string `json:"applyOwner" gorm:"primary_key"`
 	FileOwner  string `json:"fileOwner"`
 	Time       string `json:"time"`
-	FileID     string `json:"id"`
+	FileID     string `json:"id" gorm:"primary_key"`
 	Status     int    `json:"status"`
 }
 
@@ -39,7 +39,7 @@ var Node string = "A" //节点
 func UploadFiles(context *gin.Context) (err error) {
 	var file File
 
-	file.FileOwner = context.PostForm("fileOwner")
+	file.FileOwner = context.PostForm("fileOwner") //todo：后面改成Node，这里测试不同节点用
 	file.Name = context.PostForm("name")
 	file.Description = context.PostForm("description")
 	file.Size = context.PostForm("size")
@@ -99,7 +99,7 @@ func GetMyApply() (applyList []*Apply, err error) {
 	return
 }
 
-// 连接apply数据库表
+// GetApplyList 连接apply数据库表
 func GetApplyList() (applyList []*Apply, err error) {
 	if err = dao.DB.Where("file_owner = ?", Node).Find(&applyList).Error; err != nil {
 		return nil, err
@@ -115,14 +115,45 @@ func GetFileByID(id string) (file *File, err error) {
 	return
 }
 
+func GetApply(id, owner string) (apply *Apply, err error) {
+	apply = new(Apply)
+	if err = dao.DB.Where("file_id = ? and apply_owner = ?", id, owner).First(&apply).Error; err != nil {
+		return nil, err
+	}
+	return
+}
+
 func UpdateFile(file *File) (err error) {
 	err = dao.DB.Save(file).Error
-	return err
+	if err != nil {
+		return err
+	}
+	return
 
 }
 
-func DeleteATodoByID(id string) (err error) {
-	err = dao.DB.Where("id=?", id).Delete(&File{}).Error
+func UpdateApply(apply *Apply) (err error) {
+	err = dao.DB.Save(apply).Error
+	if err != nil {
+		return err
+	}
+	return
+
+}
+
+func DeleteAFileByID(id string) (err error) {
+	err = dao.DB.Where("file_id=?", id).Delete(&File{}).Error
+	if err != nil {
+		return err
+	}
+	return
+}
+
+func DeleteApply(id, owner string) (err error) {
+	err = dao.DB.Where("file_id=? and apply_owner=?", id, owner).Delete(&Apply{}).Error
+	if err != nil {
+		return err
+	}
 	return
 }
 

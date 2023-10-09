@@ -5,7 +5,7 @@ web后端采用go
 
 ##### postman调试：
 初始化查看我的页面
-127.0.0.1:8080/myfile
+127.0.0.1:8080/myfile 
 
 上传文件upload
 127.0.0.1:8080/upload/confirm

@@ -192,7 +192,13 @@ func GetFingerPrint(context *gin.Context) {
 
 // TraceBackOnChain 提取区块链上文件的信息
 func TraceBackOnChain(context *gin.Context) {
-
+	//传入文件区块链哈希
+	var txHash string
+	if err := models.TraceBackOnChain(txHash); err != nil {
+		context.JSON(http.StatusOK, gin.H{"error": err.Error()})
+	} else {
+		context.JSON(http.StatusOK, gin.H{"status": "Upload success"})
+	}
 }
 
 // DetailInformation 展示详细的信息

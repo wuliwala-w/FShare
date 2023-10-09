@@ -68,6 +68,7 @@ func UploadFiles(context *gin.Context) (err error) {
 			return err
 		}
 	}
+	//_=transfer("file",string(file))
 	return
 }
 
@@ -169,5 +170,11 @@ func SaveFilelocal(context *gin.Context) (err error) {
 			return err
 		}
 	}
+	return
+}
+
+func TraceBackOnChain(txHash string) (err error) {
+	//todo: 传hash值，进行查询文件信息，进行错误验证。根据文件id查询申请哈希，得到申请hash，用一个数组存储循环查询申请记录
+	queryTx(txHash)
 	return
 }

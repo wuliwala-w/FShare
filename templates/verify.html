@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+</head>
+<body>
+<form action="/verify/upload2" method="post" enctype="multipart/form-data">
+    <input type="file" name="FileVerify">
+    <input type="submit" value="Upload">
+</form>
+<div style="margin-bottom: 20px;"></div> <!-- 空白行 -->
+
+
+<!-- 文件下载按钮 -->
+<!--
+<a href="/download" download="downloaded_file.txt">Download File</a>
+-->
+<!-- 或者使用按钮 -->
+<!--<button onclick="window.location.href='/download'">Download File</button>-->
+
+
+<button id="extractButton" onclick="extractFingerprints()">Extract Fingerprints</button>
+<input type="text" id="fingerprintInfo" readonly>
+
+<div style="margin-bottom: 20px;"></div> <!-- 空白行 -->
+
+<button id="BlockChain" onclick="traceOnBlockchain()" disabled>Trace on the Chain</button>
+
+<!-- 单选项 -->
+<input type="radio" name="blockchainOption" value="A" id="optionA" onclick="enableButton()"> A
+<input type="radio" name="blockchainOption" value="B" id="optionB" onclick="enableButton()"> B
+<input type="radio" name="blockchainOption" value="C" id="optionC" onclick="enableButton()"> C
+<input type="radio" name="blockchainOption" value="D" id="optionD" onclick="enableButton()"> D
+<input type="radio" name="blockchainOption" value="Other" id="optionOther" onclick="enableButton()"> Other
+
+<div style="margin-bottom: 20px;"></div> <!-- 空白行 -->
+
+<!-- 文本框 -->
+<textarea id="BlockchainInfo" readonly></textarea>
+
+<script>
+    function enableButton() {
+        // 检查单选框是否有选中的项
+        var radioButtons = document.querySelectorAll('input[name="blockchainOption"]');
+        var button = document.getElementById("BlockChain");
+
+        for (var i = 0; i < radioButtons.length; i++) {
+            if (radioButtons[i].checked) {
+                // 如果有选中的单选框，则启用按钮
+                button.disabled = false;
+                return;
+            }
+        }
+
+        // 如果没有选中的单选框，则禁用按钮
+        button.disabled = true;
+    }
+
+    function traceOnBlockchain() {
+        // 从后端获取区块链信息（根据你的后端通信方式来实现）
+        var selectedOption = document.querySelector('input[name="blockchainOption"]:checked');
+
+        if (selectedOption) {
+            var optionValue = selectedOption.value;
+            var route = '/traceback/' + optionValue;
+
+            fetch(route, {
+                method: 'GET' // 或 'POST'，根据你的需求
+            })
+                .then(response => response.text()) // 假设后端返回文本数据
+                .then(data => {
+                    // 更新文本框中的区块链信息
+                    document.getElementById('BlockchainInfo').value = data;
+                })
+                .catch(error => {
+                    console.error('获取区块链信息时出错：', error);
+                });
+        } else {
+            console.error('请先选择一个单选项。');
+        }
+    }
+</script>
+
+
+
+</body>
+</html>
+
+
+

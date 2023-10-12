@@ -8,8 +8,8 @@ import (
 func SetupRouter() *gin.Engine {
 
 	r := gin.Default()
-	//r.Static("/static", "static")
-	//r.LoadHTMLGlob("templates/*")
+	r.Static("/static", "static")
+	r.LoadHTMLGlob("templates/*")
 	r.GET("/myfile", controller.IndexHandler)
 
 	//页面一路由

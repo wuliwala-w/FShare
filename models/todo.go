@@ -33,6 +33,14 @@ type Apply struct {
 	Status int `json:"status"`
 }
 
+//var IP = gin.H{
+//	"A": "124.223.171.19", //wyc
+//	"B": "101.43.94.172",  //李炳翰
+//	"C": "124.221.254.11", //金严
+//	"D": "124.223.210.53", //叶克炉
+//	"E": "124.222.196.78", //唐聪
+//}
+
 var Node string = "A" //节点
 
 /*
@@ -85,6 +93,13 @@ func CreateApply(file *File) (err error) {
 	apply.Time = t.Format("2006-01-02 15:04:05")
 	if err = dao.DB.Create(&apply).Error; err != nil {
 		return err
+	}
+	return
+}
+
+func GetAllFile() (fileList []*File, err error) {
+	if err = dao.DB.Find(&fileList).Error; err != nil {
+		return nil, err
 	}
 	return
 }

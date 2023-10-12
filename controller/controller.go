@@ -14,24 +14,24 @@ url     --> controller --> logic   --> model
 func IndexHandler(context *gin.Context) {
 	//context.HTML(http.StatusOK, "index.html", nil)
 	//这里更改节点名称，服务器分别为ABCDE，用models.Node
-	myApply, err := models.GetMyApply() //获取我的申请
+
+	myApply, err := models.GetMyApply()
 	if err != nil {
-		context.JSON(http.StatusOK, gin.H{"error": err.Error()})
-	} else {
-		context.JSON(http.StatusOK, myApply)
+		context.JSON(http.StatusOK, gin.H{"get my apply error": err.Error()})
 	}
-	applyList, err := models.GetApplyList() //获取别人申请我的信息
+	applyList, err := models.GetApplyList()
 	if err != nil {
-		context.JSON(http.StatusOK, gin.H{"error": err.Error()})
-	} else {
-		context.JSON(http.StatusOK, applyList)
+		context.JSON(http.StatusOK, gin.H{"get apply list error": err.Error()})
 	}
 	fileList, err := models.GetFileList()
 	if err != nil {
-		context.JSON(http.StatusOK, gin.H{"error": err.Error()})
-	} else {
-		context.JSON(http.StatusOK, fileList)
+		context.JSON(http.StatusOK, gin.H{"get file list error": err.Error()})
 	}
+	context.JSON(http.StatusOK, gin.H{
+		"myapply":   myApply,
+		"applylist": applyList,
+		"filelist":  fileList,
+	})
 }
 
 func IndexHandlerv4(context *gin.Context) {

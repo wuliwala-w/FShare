@@ -20,7 +20,8 @@ type File struct {
 	Description string `json:"description"`
 	Size        string `json:"size"`
 	Time        string `json:"time"`
-	Status      int    `json:"status"` //1:没被申请；2：正在被申请中；3：申请被拒绝；4：可用不可转发；5：可用可转发
+	//txHash      string `json:"txHash"`
+	Status int `json:"status"` //1:没被申请；2：正在被申请中；3：申请被拒绝；4：可用不可转发；5：可用可转发
 }
 
 type Apply struct {
@@ -28,7 +29,8 @@ type Apply struct {
 	FileOwner  string `json:"fileOwner"`
 	Time       string `json:"time"`
 	FileID     string `json:"id" gorm:"primary_key"`
-	Status     int    `json:"status"`
+	//txHash     string `json:"txHash"`
+	Status int `json:"status"`
 }
 
 var Node string = "A" //节点
@@ -188,6 +190,8 @@ func SaveFilelocal(context *gin.Context) (err error) {
 
 func TraceBackOnChain(txHash string) (err error) {
 	//todo: 传hash值，进行查询文件信息，进行错误验证。根据文件id查询申请哈希，得到申请hash，用一个数组存储循环查询申请记录
+
 	queryTx(txHash)
+
 	return
 }

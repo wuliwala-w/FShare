@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"net/http"
 	"path"
+	"path/filepath"
 	"strconv"
 	"time"
 )
@@ -159,18 +160,30 @@ func DeleteApply(id, owner string) (err error) {
 }
 
 func SaveFilelocal(context *gin.Context) (err error) {
-	//将上传的文件取出来
+	// 将上传的文件取出来
 	f, err := context.FormFile("FileVerify")
 	if err != nil {
 		context.JSON(http.StatusOK, gin.H{"message": err.Error()})
-	} else { //将上传的文件保存到指定的本地地址，并返回响应
-		log.Println(f.Filename)
-		dst := fmt.Sprintf("./verifyfile/%s", f.Filename) //设置核验文件保存的本地地址路径z
-		if err = context.SaveUploadedFile(f, dst); err != nil {
-			return err
-		}
+		return err
 	}
-	return
+
+	// 获取原始文件名和文件后缀
+	originalFileName := f.Filename
+	fileExtension := filepath.Ext(originalFileName)
+
+	// 构建新的文件名
+	newFileName := "verifyfile" + fileExtension
+
+	// 设置文件名称为新的文件名
+	f.Filename = newFileName
+
+	// 将上传的文件保存到指定的本地地址，并返回响应
+	log.Println(f.Filename)
+	dst := fmt.Sprintf("./verifyfile/%s", f.Filename) // 设置核验文件保存的本地地址路径
+	if err = context.SaveUploadedFile(f, dst); err != nil {
+		return err
+	}
+	return nil
 }
 
 func TraceBackOnChain(txHash string) (err error) {

@@ -4,6 +4,7 @@ import (
 	"FShare/dao"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"io/ioutil"
 	"log"
 	"math/rand"
 	"net/http"
@@ -161,12 +162,12 @@ func DeleteApply(id, owner string) (err error) {
 	return
 }
 
-func SaveFilelocal(context *gin.Context) (err error) {
+func SaveFilelocal(context *gin.Context) (Filetype string, err error) {
 	// 将上传的文件取出来
 	f, err := context.FormFile("FileVerify")
 	if err != nil {
 		context.JSON(http.StatusOK, gin.H{"message": err.Error()})
-		return err
+		return "", err
 	}
 
 	// 获取原始文件名和文件后缀
@@ -183,9 +184,28 @@ func SaveFilelocal(context *gin.Context) (err error) {
 	log.Println(f.Filename)
 	dst := fmt.Sprintf("./verifyfile/%s", f.Filename) // 设置核验文件保存的本地地址路径
 	if err = context.SaveUploadedFile(f, dst); err != nil {
-		return err
+		return "", err
 	}
-	return nil
+	return fileExtension, nil
+}
+
+// 获取上传的核验文件的路径
+func GetVerifyFile(filetype string) (FilePath string, err error) {
+	dirPth := fmt.Sprintf("./verifyfile")
+	fis, err := ioutil.ReadDir(filepath.Clean(filepath.ToSlash(dirPth)))
+	if err != nil {
+		return "", err
+	}
+
+	for _, f := range fis {
+		_path := filepath.Join(dirPth, f.Name())
+		// 指定格式
+		if filepath.Ext(f.Name()) == filetype {
+			FilePath = _path
+			break // 一旦找到匹配的文件，就退出循环
+		}
+	}
+	return FilePath, nil
 }
 
 func TraceBackOnChain(txHash string) (err error) {

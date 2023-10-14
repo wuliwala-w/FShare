@@ -36,6 +36,7 @@ func SetupRouter() *gin.Engine {
 	}
 
 	//页面三路由
+	r.GET("/browse", controller.GetFileList)
 	v3Group := r.Group("/browse")
 	{
 		v3Group.POST("/apply", controller.CreateApply)

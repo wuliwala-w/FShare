@@ -63,7 +63,7 @@ func CreateApply(context *gin.Context) {
 }
 
 func GetFileList(context *gin.Context) {
-	fileList, err := models.GetFileList()
+	fileList, err := models.GetAllFile()
 	if err != nil {
 		context.JSON(http.StatusOK, gin.H{"error": err.Error()})
 	} else {

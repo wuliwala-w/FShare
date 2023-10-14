@@ -178,20 +178,42 @@ func DeleteAFile(context *gin.Context) {
 
 // UploadFileLocal 将上传的文件保存到本地
 func UploadFileLocal(context *gin.Context) {
-	if err := models.SaveFilelocal(context); err != nil {
+	if Filetype, err := models.SaveFilelocal(context); err != nil {
 		context.JSON(http.StatusOK, gin.H{"error": err.Error()})
 	} else {
-		context.JSON(http.StatusOK, gin.H{"status": "Upload success"})
+		context.JSON(http.StatusOK, gin.H{
+			"status": "Upload success",
+			"type":   Filetype,
+		})
 	}
 }
 
 // GetFingerPrint 提取文件水印
 func GetFingerPrint(context *gin.Context) {
-
+	filetype, ok := context.Params.Get("type")
+	if !ok {
+		context.JSON(http.StatusOK, gin.H{"error": "type of file is not exist"})
+		return
+	}
+	//根据文件类型查找到文件的具体路径
+	filepath, err := models.GetVerifyFile(filetype)
+	if err != nil {
+		context.JSON(http.StatusOK, gin.H{
+			"error":    err.Error(),
+			"filetype": filetype,
+		})
+	} else {
+		//fingerprint, err := ExtractFingerPrint(filepath) //调用提取水印信息的接口
+		context.JSON(http.StatusOK, gin.H{
+			"status":   "Extract success",
+			"filepath": filepath,
+		})
+	}
 }
 
 // TraceBackOnChain 提取区块链上文件的信息
 func TraceBackOnChain(context *gin.Context) {
+	//首先需要
 	//传入文件区块链哈希
 	var txHash string
 	if err := models.TraceBackOnChain(txHash); err != nil {

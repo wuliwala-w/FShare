@@ -50,7 +50,7 @@ func SetupRouter() *gin.Engine {
 		//上传需要进行追溯的文件
 		v4Group.POST("/upload2", controller.UploadFileLocal)
 		//查询所上传的文件的水印信息
-		v4Group.GET("/fingerprint", controller.GetFingerPrint)
+		v4Group.GET("/fingerprint/:type", controller.GetFingerPrint)
 		//查询所上传文件在区块链上所保存的信息
 		v4Group.GET("/traceback/:sourceNode", controller.TraceBackOnChain)
 		//查询追溯对比后的详细信息

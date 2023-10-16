@@ -34,6 +34,25 @@ func IndexHandler(context *gin.Context) {
 	})
 }
 
+func DownloadFile(context *gin.Context) {
+	filename, _ := context.Params.Get("fileName")
+	node, _ := context.Params.Get("destNode")
+	if err := models.DownloadFile(context, node, filename); err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	} else {
+		context.JSON(http.StatusOK, gin.H{"file": "success download"})
+	}
+}
+
+func Download(context *gin.Context) {
+	filename, _ := context.Params.Get("fileName")
+	if err := models.Download(context, filename); err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	} else {
+		context.JSON(http.StatusOK, gin.H{"file": "success download"})
+	}
+}
+
 func IndexHandlerv4(context *gin.Context) {
 	context.HTML(http.StatusOK, "verify.html", nil)
 }

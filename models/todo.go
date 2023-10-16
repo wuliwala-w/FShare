@@ -33,19 +33,36 @@ type Apply struct {
 	Status int `json:"status"`
 }
 
-//var IP = gin.H{
-//	"A": "124.223.171.19", //wyc
-//	"B": "101.43.94.172",  //李炳翰
-//	"C": "124.221.254.11", //金严
-//	"D": "124.223.210.53", //叶克炉
-//	"E": "124.222.196.78", //唐聪
-//}
+var IP = gin.H{
+	"A": "124.223.171.19", //wyc
+	"B": "101.43.94.172",  //李炳翰
+	"C": "124.221.254.11", //金严
+	"D": "124.223.210.53", //叶克炉
+	"E": "124.222.196.78", //唐聪
+}
 
 var Node string = "A" //节点
 
 /*
 	Todo这个model的增删改查放在这里
 */
+
+func DownloadFile(context *gin.Context, node, fileName string) (err error) {
+	str := fmt.Sprintf("%v", IP[node])
+	address := "http://" + str + ":8080/donwlowad/" + fileName
+	//fmt.Println(str)
+	context.Redirect(http.StatusMovedPermanently, address)
+	return
+
+}
+
+func Download(context *gin.Context, fileName string) (err error) {
+	dst := fmt.Sprintf("./", fileName) //todo:这里修改文件路径
+	context.Header("Content-Disposition", "attachment; filename="+fileName)
+	context.Header("Content-Type", "application/octet-stream")
+	context.File(dst)
+	return
+}
 
 func UploadFiles(context *gin.Context) (err error) {
 	var file File
@@ -57,13 +74,14 @@ func UploadFiles(context *gin.Context) (err error) {
 	file.Status, _ = strconv.Atoi(context.PostForm("status"))
 
 	f, err := context.FormFile("f1")
+	f.Filename = file.Name
 	if err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
 	} else {
 		//保存读取的文件到本地服务器
-		dst := path.Join("./", f.Filename)
+		dst := path.Join("./", f.Filename) //todo:这里修改文件路径
 		_ = context.SaveUploadedFile(f, dst)
 		context.JSON(http.StatusOK, gin.H{
 			"status": "ok",
@@ -75,11 +93,11 @@ func UploadFiles(context *gin.Context) (err error) {
 		randnum := fmt.Sprintf("%04v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(10000))
 		file.FileID = Node + timestamp + randnum
 		file.Status = 1
+		//file.Hash=transfer("file",string(file))
 		if err = dao.DB.Create(&file).Error; err != nil {
 			return err
 		}
 	}
-	//_=transfer("file",string(file))
 	return
 }
 
@@ -118,7 +136,6 @@ func GetMyApply() (applyList []*Apply, err error) {
 	return
 }
 
-// GetApplyList 连接apply数据库表
 func GetApplyList() (applyList []*Apply, err error) {
 	if err = dao.DB.Where("file_owner = ?", Node).Find(&applyList).Error; err != nil {
 		return nil, err
@@ -152,6 +169,10 @@ func UpdateFile(file *File) (err error) {
 }
 
 func UpdateApply(apply *Apply) (err error) {
+	//todo:需要将更改后的申请记录存入数据库
+	//t := time.Now()
+	//apply.Time = t.Format("2006-01-02 15:04:05")
+	//apply.Hash = transfer("apply", string(apply))
 	err = dao.DB.Save(apply).Error
 	if err != nil {
 		return err

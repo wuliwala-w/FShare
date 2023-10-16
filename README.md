@@ -1,7 +1,7 @@
 # FShare项目
 web后端采用go
 
-#### 每个服务器部署之前，在models里更改Node名称
+#### 每个服务器部署之前，在models里更改Node名称 
 
 ##### postman调试：
 初始化查看我的页面 

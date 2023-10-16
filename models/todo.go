@@ -36,11 +36,13 @@ type Apply struct {
 }
 
 var IP = gin.H{
-	"A": "124.223.171.19", //wyc
+	"A": "124.223.171.19", //王钺程
 	"B": "101.43.94.172",  //李炳翰
 	"C": "124.221.254.11", //金严
 	"D": "124.223.210.53", //叶克炉
 	"E": "124.222.196.78", //唐聪
+	"F": "10.96.92.7",     //kxq
+	"G": "10.96.208.18",   //wyc
 }
 
 var Node string = "A" //节点
@@ -51,7 +53,7 @@ var Node string = "A" //节点
 
 func DownloadFile(context *gin.Context, node, fileName string) (err error) {
 	str := fmt.Sprintf("%v", IP[node])
-	address := "http://" + str + ":8080/donwlowad/" + fileName
+	address := "http://" + str + ":8080/download/" + fileName
 	//fmt.Println(str)
 	context.Redirect(http.StatusMovedPermanently, address)
 	return
@@ -59,7 +61,7 @@ func DownloadFile(context *gin.Context, node, fileName string) (err error) {
 }
 
 func Download(context *gin.Context, fileName string) (err error) {
-	dst := fmt.Sprintf("./", fileName) //todo:这里修改文件路径
+	dst := fmt.Sprintf("./%s", fileName) //todo:这里修改文件路径
 	context.Header("Content-Disposition", "attachment; filename="+fileName)
 	context.Header("Content-Type", "application/octet-stream")
 	context.File(dst)

@@ -5,21 +5,19 @@
 <body>
 <form action="/verify/upload2" method="post" enctype="multipart/form-data">
     <input type="file" name="FileVerify">
-    <input type="submit" value="Upload">
+    <input type="submit" value="Upload" onclick="showSuccessPopup()">
 </form>
 <div style="margin-bottom: 20px;"></div> <!-- 空白行 -->
-
 
 <!-- 文件下载按钮 -->
 <!--
 <a href="/download" download="downloaded_file.txt">Download File</a>
 -->
 <!-- 或者使用按钮 -->
-<!--<button onclick="window.location.href='/download'">Download File</button>-->
-
+<!--<button onclick="window.location.href='/download'">Download File</button-->
 
 <button id="extractButton" onclick="extractFingerprints()">Extract Fingerprints</button>
-<input type="text" id="fingerprintInfo" readonly>
+<input type="json" id="fingerprintInfo" readonly>
 
 <div style="margin-bottom: 20px;"></div> <!-- 空白行 -->
 
@@ -38,6 +36,21 @@
 <textarea id="BlockchainInfo" readonly></textarea>
 
 <script>
+    function extractFingerprints() {
+        // 向后端发送请求以获取指纹信息（这里只是示例，你需要根据你的后端通信方式来实现）
+        fetch('/verify/fingerprint/png', {
+            method: 'GET' // 或 'POST'，根据你的需求
+        })
+            .then(response => response.json()) // 假设后端返回文本数据
+            .then(data => {
+                // 更新文本框中的指纹信息
+                document.getElementById('fingerprintInfo').value = data;
+            })
+            .catch(error => {
+                console.error('获取指纹信息时出错：', error);
+            });
+    }
+
     function enableButton() {
         // 检查单选框是否有选中的项
         var radioButtons = document.querySelectorAll('input[name="blockchainOption"]');
@@ -78,12 +91,36 @@
             console.error('请先选择一个单选项。');
         }
     }
+
+    function showSuccessPopup() {
+        // 向后端发送请求以获取成功信息
+        fetch('/verify/upload2', {
+            method: 'GET', // 或 'POST'，根据你的需求
+        })
+            .then(response => response.json()) // 解析 JSON 数据
+            .then(data => {
+                // 创建一个模态对话框来显示成功信息
+                var modal = document.createElement('div');
+                modal.className = 'modal';
+                modal.innerHTML = '<p>' + data.status + '</p><button onclick="closeModal()">OK</button>';
+                document.body.appendChild(modal);
+
+                // 禁用其他页面元素以防止用户操作
+                document.body.style.pointerEvents = 'none';
+
+                function closeModal() {
+                    // 移除模态对话框并恢复页面元素的操作
+                    modal.style.display = 'none';
+                    document.body.style.pointerEvents = 'auto';
+
+                    // 重定向到 verify/index 页面
+                    window.location.href = '/verify/index';
+                }
+            })
+            .catch(error => {
+                console.error('获取成功信息时出错：', error);
+            });
+    }
 </script>
-
-
-
 </body>
 </html>
-
-
-

@@ -21,7 +21,8 @@ type File struct {
 	Description string `json:"description"`
 	Size        string `json:"size"`
 	Time        string `json:"time"`
-	//txHash      string `json:"txHash"`
+	//Hash        string `json:"hash"`
+	//Fingerprint string `json:"fingerprint"` //todo: 后续需要将二者加上
 	Status int `json:"status"` //1:没被申请；2：正在被申请中；3：申请被拒绝；4：可用不可转发；5：可用可转发
 }
 
@@ -177,6 +178,7 @@ func DeleteApply(id, owner string) (err error) {
 	return
 }
 
+// 将核验文件保存到核验缓存区
 func SaveFilelocal(context *gin.Context) (Filetype string, err error) {
 	// 将上传的文件取出来
 	f, err := context.FormFile("FileVerify")
@@ -221,6 +223,15 @@ func GetVerifyFile(filetype string) (FilePath string, err error) {
 		}
 	}
 	return FilePath, nil
+}
+
+// 获取上传的核验文件的哈希值
+func FindtxHash(fingerprint string) (file *File, err error) {
+	file = new(File)
+	if err = dao.DB.Where("fingerprint=?", fingerprint).First(&file).Error; err != nil {
+		return nil, err
+	}
+	return
 }
 
 func TraceBackOnChain(txHash string) (err error) {

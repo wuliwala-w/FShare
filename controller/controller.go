@@ -203,19 +203,28 @@ func GetFingerPrint(context *gin.Context) {
 			"filetype": filetype,
 		})
 	} else {
-		//fingerprint, err := ExtractFingerPrint(filepath) //调用提取水印信息的接口
+		//fingerprint, err := ExtractFingerPrint(filepath) //todo: 后续加上提取水印算法之后加上
+		fingerprint := filepath
+		/*file, err := models.FindtxHash(fingerprint)
+		if err != nil {
+			context.JSON(http.StatusOK, gin.H{"error": err.Error()})
+		}*/ //todo: 后续完善了哈希功能之后加上
 		context.JSON(http.StatusOK, gin.H{
-			"status":   "Extract success",
-			"filepath": filepath,
+			"fingerprint": fingerprint,
+			//"filetxHash": file.Hash, //todo: 后续需要将这里加上
 		})
 	}
 }
 
 // TraceBackOnChain 提取区块链上文件的信息
 func TraceBackOnChain(context *gin.Context) {
-	//首先需要
+	//首先需要提取出哈希值
+	txHash, ok := context.Params.Get("txHash")
+	if !ok {
+		context.JSON(http.StatusOK, gin.H{"error": "txHash is not exist"})
+		return
+	}
 	//传入文件区块链哈希
-	var txHash string
 	if err := models.TraceBackOnChain(txHash); err != nil {
 		context.JSON(http.StatusOK, gin.H{"error": err.Error()})
 	} else {

@@ -230,7 +230,7 @@ func GetFingerPrint(context *gin.Context) {
 		}*/ //todo: 后续完善了哈希功能之后加上
 		context.JSON(http.StatusOK, gin.H{
 			"fingerprint": fingerprint,
-			//"filetxHash": file.Hash, //todo: 后续需要将这里加上
+			"filetxHash":  "Hash(string)", //todo: 后续需要将这里加上
 		})
 	}
 }

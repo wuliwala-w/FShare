@@ -23,7 +23,7 @@ type File struct {
 	Time        string `json:"time"`
 	//Hash        string `json:"hash"`
 	//Fingerprint string `json:"fingerprint"` //todo: 后续需要将二者加上
-	Status int `json:"status"` //1:没被申请；2：正在被申请中；3：申请被拒绝；4：可用不可转发；5：可用可转发
+	Status int `json:"status"` //1:可转发；2：不可转发；
 }
 
 type Apply struct {
@@ -32,7 +32,7 @@ type Apply struct {
 	Time       string `json:"time"`
 	FileID     string `json:"id" gorm:"primary_key"`
 	//txHash     string `json:"txHash"`
-	Status int `json:"status"`
+	Status int `json:"status"` //1:没被申请；2：正在被申请中；3：申请被拒绝；4：可用不可转发；5：可用可转发
 }
 
 var IP = gin.H{
@@ -45,7 +45,7 @@ var IP = gin.H{
 	"G": "10.96.208.18",   //wyc
 }
 
-var Node string = "A" //节点
+var Node string = "G" //节点
 
 /*
 	Todo这个model的增删改查放在这里

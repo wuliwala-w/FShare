@@ -11,14 +11,14 @@ func SetupRouter() *gin.Engine {
 	r.Static("/static", "static")
 	r.LoadHTMLGlob("templates/*")
 	r.GET("/myfile", controller.IndexHandler)
-	r.GET("/download/:fileName", controller.Download) //todo:待测试
+	r.GET("/download/:fileName", controller.Download)
 
 	//页面一路由
 	v1Group := r.Group("myfile")
 	{
 
 		//下载
-		v1Group.GET("/download/:fileName/:destNode", controller.DownloadFile) //todo:待测试
+		v1Group.GET("/download/:fileName/:destNode", controller.DownloadFile)
 		//查看一个文件信息
 		v1Group.GET("/onefile/:id", controller.GetFileByID)
 		//按钮触发更改状态

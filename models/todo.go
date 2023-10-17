@@ -7,10 +7,12 @@ import (
 	"io/ioutil"
 	"log"
 	"math/rand"
+	"net"
 	"net/http"
 	"path"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -23,7 +25,7 @@ type File struct {
 	Time        string `json:"time"`
 	//Hash        string `json:"hash"`
 	//Fingerprint string `json:"fingerprint"` //todo: 后续需要将二者加上
-	Status int `json:"status"` //1:可转发；2：不可转发；
+	Status int `json:"status"` //1:没被申请；2：正在被申请中；3：申请被拒绝；4：可用不可转发；5：可用可转发
 }
 
 type Apply struct {
@@ -32,7 +34,7 @@ type Apply struct {
 	Time       string `json:"time"`
 	FileID     string `json:"id" gorm:"primary_key"`
 	//txHash     string `json:"txHash"`
-	Status int `json:"status"` //1:没被申请；2：正在被申请中；3：申请被拒绝；4：可用不可转发；5：可用可转发
+	Status int `json:"status"`
 }
 
 var IP = gin.H{
@@ -45,11 +47,32 @@ var IP = gin.H{
 	"G": "10.96.208.18",   //wyc
 }
 
-var Node string = "G" //节点
+var Ip2Node = gin.H{
+	"124.223.171.19": "A",
+	"101.43.94.172":  "B",
+	"124.221.254.11": "C",
+	"124.223.210.53": "D", //叶克炉
+	"124.222.196.78": "E", //唐聪
+	"10.96.92.7":     "F", //kxq
+	"10.96.208.18":   "G", //wyc
+}
+
+var Node string //节点
 
 /*
-	Todo这个model的增删改查放在这里
+Todo这个model的增删改查放在这里
 */
+
+func GetHostIp() string {
+	conn, err := net.Dial("udp", "8.8.8.8:53")
+	if err != nil {
+		fmt.Println("get current host ip err: ", err)
+		return ""
+	}
+	addr := conn.LocalAddr().(*net.UDPAddr)
+	ip := strings.Split(addr.String(), ":")[0]
+	return ip
+}
 
 func DownloadFile(context *gin.Context, node, fileName string) (err error) {
 	str := fmt.Sprintf("%v", IP[node])

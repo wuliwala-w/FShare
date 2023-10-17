@@ -94,14 +94,15 @@ func Download(context *gin.Context, fileName string) (err error) {
 func UploadFiles(context *gin.Context) (err error) {
 	var file File
 
-	file.FileOwner = context.PostForm("fileOwner") //todo：后面改成Node，这里测试不同节点用
+	//file.FileOwner = context.PostForm("fileOwner") //todo：后面改成Node，这里测试不同节点用
+	file.FileOwner = Node
 	file.Name = context.PostForm("name")
 	file.Description = context.PostForm("description")
 	file.Size = context.PostForm("size")
 	file.Status, _ = strconv.Atoi(context.PostForm("status"))
 
 	f, err := context.FormFile("f1")
-	f.Filename = file.Name
+	f.Filename = file.Name //+".xml" todo:这里更改文件名可以加xml后缀
 	if err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
@@ -119,7 +120,7 @@ func UploadFiles(context *gin.Context) (err error) {
 		timestamp := strconv.FormatInt(t.UTC().UnixNano(), 10)
 		randnum := fmt.Sprintf("%04v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(10000))
 		file.FileID = Node + timestamp + randnum
-		file.Status = 1
+		//file.Status = 1
 		//file.Hash=transfer("file",string(file))
 		if err = dao.DB.Create(&file).Error; err != nil {
 			return err

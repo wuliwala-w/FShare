@@ -10,7 +10,7 @@ GET
 
 上传文件upload  
 POST  
-127.0.0.1:8080/upload/confirm   
+127.0.0.1:8080/upload/confirm 
 表单类型第一条是文件，后面是json数据  
 文件key:f1，文件实例（图片，文档）  
 {"id":"random","name":"file1","fileOwner":"A","description":"this is file1","size":"1kb","time":"random","status":0}

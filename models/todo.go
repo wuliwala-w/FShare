@@ -7,10 +7,12 @@ import (
 	"io/ioutil"
 	"log"
 	"math/rand"
+	"net"
 	"net/http"
 	"path"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -45,11 +47,32 @@ var IP = gin.H{
 	"G": "10.96.208.18",   //wyc
 }
 
-var Node string = "A" //节点
+var Ip2Node = gin.H{
+	"124.223.171.19": "A",
+	"101.43.94.172":  "B",
+	"124.221.254.11": "C",
+	"124.223.210.53": "D", //叶克炉
+	"124.222.196.78": "E", //唐聪
+	"10.96.92.7":     "F", //kxq
+	"10.96.208.18":   "G", //wyc
+}
+
+var Node string //节点
 
 /*
-	Todo这个model的增删改查放在这里
+Todo这个model的增删改查放在这里
 */
+
+func GetHostIp() string {
+	conn, err := net.Dial("udp", "8.8.8.8:53")
+	if err != nil {
+		fmt.Println("get current host ip err: ", err)
+		return ""
+	}
+	addr := conn.LocalAddr().(*net.UDPAddr)
+	ip := strings.Split(addr.String(), ":")[0]
+	return ip
+}
 
 func DownloadFile(context *gin.Context, node, fileName string) (err error) {
 	str := fmt.Sprintf("%v", IP[node])

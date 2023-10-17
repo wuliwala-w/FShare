@@ -15,6 +15,10 @@ POST
 文件key:f1，文件实例（图片，文档）  
 {"id":"random","name":"file1","fileOwner":"A","description":"this is file1","size":"1kb","time":"random","status":0}
 
+下载文件download
+GET
+127.0.0.1:8080/myfile/download/文件名（带后缀）/节点名（用F和G测试）
+
 页面三获取所有文件browse  
 GET  
 127.0.0.1:8080/browse

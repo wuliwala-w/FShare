@@ -59,3 +59,7 @@ POST
 GET  
 127.0.0.1:8080/verify/fingerprint/核验文件的类型
 
+链上追溯文件信息和申请信息  
+GET
+127.0.0.1:8080/verify/traceback/文件的哈希值/辅助信息（选择节点）
+

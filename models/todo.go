@@ -2,6 +2,7 @@ package models
 
 import (
 	"FShare/dao"
+	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"io/ioutil"
@@ -23,7 +24,7 @@ type File struct {
 	Description string `json:"description"`
 	Size        string `json:"size"`
 	Time        string `json:"time"`
-	//Hash        string `json:"hash"`
+	Hash        string `json:"hash"`
 	//Fingerprint string `json:"fingerprint"` //todo: 后续需要将二者加上
 	Status int `json:"status"` //1:没被申请；2：正在被申请中；3：申请被拒绝；4：可用不可转发；5：可用可转发
 }
@@ -33,8 +34,20 @@ type Apply struct {
 	FileOwner  string `json:"fileOwner"`
 	Time       string `json:"time"`
 	FileID     string `json:"id" gorm:"primary_key"`
-	//txHash     string `json:"txHash"`
-	Status int `json:"status"`
+	Hash       string `json:"txHash"`
+	Status     int    `json:"status"`
+}
+
+type Hashdata struct {
+	Result struct {
+		Tx struct {
+			Payload struct {
+				ContentStorage struct {
+					Value string `json:"value"`
+				} `json:"contentStorage"`
+			} `json:"payload"`
+		} `json:"tx"`
+	} `json:"result"`
 }
 
 var IP = gin.H{
@@ -121,7 +134,10 @@ func UploadFiles(context *gin.Context) (err error) {
 		randnum := fmt.Sprintf("%04v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(10000))
 		file.FileID = Node + timestamp + randnum
 		//file.Status = 1
-		//file.Hash=transfer("file",string(file))
+		fileproperties := file.FileOwner + "#" + file.Name + "#" + file.Description + "#" + file.Size + "#" + strconv.Itoa(file.Status) + "#" + file.Time + "#" + file.FileID
+		fmt.Println(fileproperties)
+		file.Hash = transfer("file", fileproperties)
+		//file.Fingerprint = GenertaeFingerPrint(file)
 		if err = dao.DB.Create(&file).Error; err != nil {
 			return err
 		}
@@ -281,10 +297,40 @@ func FindtxHash(fingerprint string) (file *File, err error) {
 	return
 }
 
-func TraceBackOnChain(txHash string) (err error) {
+func AnalyzeData(txHash string) ([]string, error) {
+	encodeddata := queryTx(txHash)
+	//定义结构体以匹配JSON数据
+	var decodedata Hashdata
+	err := json.Unmarshal(encodeddata, &decodedata)
+	if err != nil {
+		return nil, err
+	}
+	// 提取"value"字段的值
+	value := decodedata.Result.Tx.Payload.ContentStorage.Value
+	values := strings.Split(value, "#")
+	return values, nil
+}
+
+func TraceBackOnChain(txHash string) (applydatalist [][]string, filedata []string, err error) {
 	//todo: 传hash值，进行查询文件信息，进行错误验证。根据文件id查询申请哈希，得到申请hash，用一个数组存储循环查询申请记录
+	//1.通过文件hash，查询文件信息,取出文件ID
+	filedata, err = AnalyzeData(txHash)
+	if err != nil {
+		fmt.Println("JSON解析错误:", err)
+		return nil, nil, err
+	}
 
-	queryTx(txHash)
-
+	//2.取出文件ID,根据文件ID查询申请哈希，得到申请哈希，用一个数组存储循环查询申请记录
+	fileID := filedata[6]
+	applylist := new([]Apply)
+	if err = dao.DB.Where("file_id=?", fileID).First(&applylist).Error; err != nil {
+		return nil, nil, err
+	}
+	//循环查询申请记录
+	for i := range *applylist {
+		apply := (*applylist)[i]
+		applydata, _ := AnalyzeData(apply.Hash)
+		applydatalist = append(applydatalist, applydata)
+	}
 	return
 }

@@ -134,7 +134,7 @@ func UploadFiles(context *gin.Context) (err error) {
 		randnum := fmt.Sprintf("%04v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(10000))
 		file.FileID = Node + timestamp + randnum
 		//file.Status = 1
-		fileproperties := file.FileOwner + "#" + file.Name + "#" + file.Description + "#" + file.Size + "#" + strconv.Itoa(file.Status) + "#" + file.Time + "#" + file.FileID
+		fileproperties := file.FileID + "#" + file.Name + "#" + file.FileOwner + "#" + file.Description + "#" + file.Size + "#" + file.Time + "#" + strconv.Itoa(file.Status)
 		fmt.Println(fileproperties)
 		file.Hash = transfer("file", fileproperties)
 		//file.Fingerprint = GenertaeFingerPrint(file)
@@ -214,9 +214,10 @@ func UpdateFile(file *File) (err error) {
 
 func UpdateApply(apply *Apply) (err error) {
 	//todo:需要将更改后的申请记录存入数据库
-	//t := time.Now()
-	//apply.Time = t.Format("2006-01-02 15:04:05")
-	//apply.Hash = transfer("apply", string(apply))
+	t := time.Now()
+	apply.Time = t.Format("2006-01-02 15:04:05")
+	applyproperties := apply.ApplyOwner + "#" + apply.FileOwner + "#" + apply.Time + "#" + apply.FileID + "#" + strconv.Itoa(apply.Status)
+	apply.Hash = transfer("apply", applyproperties)
 	err = dao.DB.Save(apply).Error
 	if err != nil {
 		return err
@@ -321,7 +322,7 @@ func TraceBackOnChain(txHash string) (applydatalist [][]string, filedata []strin
 	}
 
 	//2.取出文件ID,根据文件ID查询申请哈希，得到申请哈希，用一个数组存储循环查询申请记录
-	fileID := filedata[6]
+	fileID := filedata[0]
 	applylist := new([]Apply)
 	if err = dao.DB.Where("file_id=?", fileID).First(&applylist).Error; err != nil {
 		return nil, nil, err

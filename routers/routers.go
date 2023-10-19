@@ -2,12 +2,14 @@ package routers
 
 import (
 	"FShare/controller"
+	"FShare/middlewares"
 	"github.com/gin-gonic/gin"
 )
 
 func SetupRouter() *gin.Engine {
 
 	r := gin.Default()
+	r.Use(middlewares.Cors())
 	r.Static("/static", "static")
 	r.LoadHTMLGlob("templates/*")
 	r.GET("/myfile", controller.IndexHandler)

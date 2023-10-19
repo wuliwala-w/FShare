@@ -163,7 +163,7 @@ func transfer(Key, Value string) string {
 
 // 根据交易hash查询交易详情
 // todo：返回查询值
-func queryTx(txHash string) {
+func queryTx(txHash string) []byte {
 	//按照“RPC接口>系统接口>交易接口”中的“根据哈希查询交易信息 QueryTransaction”定义，来构造JSON RPC消息内容
 	poststr := fmt.Sprintf(`{"jsonrpc":"2.0","id":0,"method":"Chain33.QueryTransaction","params":[{"hash":"%v"}]}`, txHash)
 	fmt.Println("---query tx request:")
@@ -180,4 +180,5 @@ func queryTx(txHash string) {
 	}
 	fmt.Println("---query tx response:")
 	printJson(data)
+	return data
 }

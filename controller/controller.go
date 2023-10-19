@@ -244,10 +244,14 @@ func TraceBackOnChain(context *gin.Context) {
 		return
 	}
 	//传入文件区块链哈希
-	if err := models.TraceBackOnChain(txHash); err != nil {
+	if applydatalist, filedata, err := models.TraceBackOnChain(txHash); err != nil {
 		context.JSON(http.StatusOK, gin.H{"error": err.Error()})
 	} else {
-		context.JSON(http.StatusOK, gin.H{"status": "Upload success"})
+		context.JSON(http.StatusOK, gin.H{
+			"status":        "Trace back success",
+			"filedata":      filedata,
+			"applydatalist": applydatalist,
+		})
 	}
 }
 

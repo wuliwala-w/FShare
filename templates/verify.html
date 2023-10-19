@@ -38,7 +38,7 @@
 <script>
     function extractFingerprints() {
         // 向后端发送请求以获取指纹信息（这里只是示例，你需要根据你的后端通信方式来实现）
-        fetch('/verify/fingerprint/.png', {
+        fetch('/verify/fingerprint/%s' + data, {
             method: 'GET' // 或 'POST'，根据你的需求
         })
             .then(response => response.json()) // 假设后端返回文本数据

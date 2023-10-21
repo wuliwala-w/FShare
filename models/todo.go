@@ -340,7 +340,9 @@ func TraceBackOnChain(txHash string) ([]Hashdata, Hashdata, error) {
 		return applydatalist, filedata, err
 	}
 	//2.取出文件ID,根据文件ID查询申请哈希，得到申请哈希，用一个数组存储循环查询申请记录
-	fileID := filedata.Result.Tx.Payload.ContentStorage.Value
+	filemessage := filedata.Result.Tx.Payload.ContentStorage.Value
+	filemessages := strings.Split(filemessage, "#")
+	fileID := filemessages[6]
 	applylist := new([]Apply)
 	if err = dao.DB.Where("file_id=?", fileID).First(&applylist).Error; err != nil {
 		return applydatalist, filedata, err

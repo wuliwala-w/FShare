@@ -41,11 +41,29 @@ type Apply struct {
 type Hashdata struct {
 	Result struct {
 		Tx struct {
+			Execer  string `json:"execer"`
 			Payload struct {
 				ContentStorage struct {
-					Value string `json:"value"`
+					Content interface{} `json:"content"`
+					Key     string      `json:"key"`
+					Op      int         `json:"op"`
+					Value   string      `json:"value"`
 				} `json:"contentStorage"`
+				Ty int `json:"ty"`
 			} `json:"payload"`
+			RawPayload string `json:"rawPayload"`
+			Signature  struct {
+				Ty        int    `json:"ty"`
+				Pubkey    string `json:"pubkey"`
+				Signature string `json:"signature"`
+			} `json:"signature"`
+			Fee    int    `json:"fee"`
+			Feefmt string `json:"feefmt"`
+			Expire int    `json:"expire"`
+			Nonce  int    `json:"nonce"`
+			From   string `json:"from"`
+			To     string `json:"to"`
+			Hash   string `json:"hash"`
 		} `json:"tx"`
 	} `json:"result"`
 }
@@ -298,34 +316,34 @@ func FindtxHash(fingerprint string) (file *File, err error) {
 	return
 }
 
-func AnalyzeData(txHash string) ([]string, error) {
+func AnalyzeData(txHash string) (Hashdata, error) {
 	encodeddata := queryTx(txHash)
 	//定义结构体以匹配JSON数据
 	var decodedata Hashdata
 	err := json.Unmarshal(encodeddata, &decodedata)
 	if err != nil {
-		return nil, err
+		return decodedata, err
 	}
-	// 提取"value"字段的值
-	value := decodedata.Result.Tx.Payload.ContentStorage.Value
-	values := strings.Split(value, "#")
-	return values, nil
+	return decodedata, nil
 }
 
-func TraceBackOnChain(txHash string) (applydatalist [][]string, filedata []string, err error) {
+func TraceBackOnChain(txHash string) ([]Hashdata, Hashdata, error) {
 	//todo: 传hash值，进行查询文件信息，进行错误验证。根据文件id查询申请哈希，得到申请hash，用一个数组存储循环查询申请记录
 	//1.通过文件hash，查询文件信息,取出文件ID
-	filedata, err = AnalyzeData(txHash)
+	//定义结构体
+	var filedata Hashdata
+	var applydatalist []Hashdata
+	//进行查询文件信息
+	filedata, err := AnalyzeData(txHash)
 	if err != nil {
 		fmt.Println("JSON解析错误:", err)
-		return nil, nil, err
+		return applydatalist, filedata, err
 	}
-
 	//2.取出文件ID,根据文件ID查询申请哈希，得到申请哈希，用一个数组存储循环查询申请记录
-	fileID := filedata[0]
+	fileID := filedata.Result.Tx.Payload.ContentStorage.Value
 	applylist := new([]Apply)
 	if err = dao.DB.Where("file_id=?", fileID).First(&applylist).Error; err != nil {
-		return nil, nil, err
+		return applydatalist, filedata, err
 	}
 	//循环查询申请记录
 	for i := range *applylist {
@@ -333,5 +351,5 @@ func TraceBackOnChain(txHash string) (applydatalist [][]string, filedata []strin
 		applydata, _ := AnalyzeData(apply.Hash)
 		applydatalist = append(applydatalist, applydata)
 	}
-	return
+	return applydatalist, filedata, err
 }

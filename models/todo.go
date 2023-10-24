@@ -34,6 +34,7 @@ type Apply struct {
 	FileOwner  string `json:"fileOwner"`
 	Time       string `json:"time"`
 	FileID     string `json:"id" gorm:"primary_key"`
+	FileName   string `json:"fileName"`
 	Hash       string `json:"txHash"`
 	Status     int    `json:"status"`
 }
@@ -150,6 +151,7 @@ func CreateApply(file *File) (err error) {
 	apply.ApplyOwner = Node
 	apply.FileOwner = file.FileOwner
 	apply.FileID = file.FileID
+	apply.FileName = file.Name
 	apply.Status = 2
 	t := time.Now()
 	apply.Time = t.Format("2006-01-02 15:04:05")

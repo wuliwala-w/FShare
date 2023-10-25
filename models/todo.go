@@ -5,11 +5,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"io"
 	"io/ioutil"
 	"log"
 	"math/rand"
 	"net"
 	"net/http"
+	"os"
 	"path"
 	"path/filepath"
 	"strconv"
@@ -115,12 +117,41 @@ func DownloadFile(context *gin.Context, node, fileName string) (err error) {
 
 }
 
+//func Download(context *gin.Context, fileName string) (err error) {
+//	dst := fmt.Sprintf("./%s", fileName) //todo:这里修改文件路径
+//	context.Header("Content-Type", "application/octet-stream")
+//	context.Header("Content-Disposition", "attachment; filename="+fileName)
+//	//context.Header("Content-Transfer-Encoding", "binary")
+//	context.File(dst)
+//	return
+//}
+
 func Download(context *gin.Context, fileName string) (err error) {
-	dst := fmt.Sprintf("./%s", fileName) //todo:这里修改文件路径
+	// 构建文件路径
+	dst := fmt.Sprintf("./%s", fileName) // 修改为正确的文件路径
+
+	// 打开文件
+	file, err := os.Open(dst)
+	if err != nil {
+		// 处理错误
+		context.JSON(http.StatusNotFound, gin.H{"error": "File not found"})
+		return err
+	}
+	defer file.Close()
+
+	// 设置响应头
 	context.Header("Content-Disposition", "attachment; filename="+fileName)
 	context.Header("Content-Type", "application/octet-stream")
-	context.File(dst)
-	return
+
+	// 将文件内容传递给客户端
+	_, err = io.Copy(context.Writer, file)
+	if err != nil {
+		// 处理错误
+		context.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		return err
+	}
+
+	return nil
 }
 
 func UploadFiles(context *gin.Context) (err error) {

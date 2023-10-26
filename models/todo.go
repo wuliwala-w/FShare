@@ -3,6 +3,7 @@ package models
 import (
 	"FShare/dao"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"io"
@@ -211,7 +212,7 @@ func CreateApply(file *File) (err error) {
 }
 
 func GetAllFile() (fileList []*File, err error) {
-	if err = dao.DB.Find(&fileList).Error; err != nil {
+	if err = dao.DB.Where("file_owner <> ?", Node).Find(&fileList).Error; err != nil {
 		return nil, err
 	}
 	return
@@ -291,9 +292,8 @@ func DeleteAFileByID(id string) (err error) {
 	if err != nil {
 		return err
 	}
-
 	if FileIsExisted(file.Name) == false {
-		return err
+		return errors.New("file no find")
 	} else {
 		fmt.Println("delete success")
 		err = os.Remove(file.Name)

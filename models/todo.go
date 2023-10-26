@@ -277,8 +277,31 @@ func UpdateApply(apply *Apply) (err error) {
 
 }
 
+func FileIsExisted(filename string) bool {
+	existed := true
+	if _, err := os.Stat(filename); os.IsNotExist(err) {
+		existed = false
+	}
+	return existed
+}
+
 func DeleteAFileByID(id string) (err error) {
-	err = dao.DB.Where("file_id=?", id).Delete(&File{}).Error
+	var file File
+	err = dao.DB.Where("file_id=?", id).Find(&file).Error
+	if err != nil {
+		return err
+	}
+
+	if FileIsExisted(file.Name) == false {
+		return err
+	} else {
+		fmt.Println("delete success")
+		err = os.Remove(file.Name)
+		if err != nil {
+			return err
+		}
+	}
+	err = dao.DB.Where("file_id=?", id).Delete(&file).Error
 	if err != nil {
 		return err
 	}

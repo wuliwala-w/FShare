@@ -3,6 +3,7 @@ package models
 import (
 	"FShare/dao"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"io"
@@ -39,6 +40,7 @@ type Apply struct {
 	FileName   string `json:"fileName"`
 	Hash       string `json:"txHash"`
 	Status     int    `json:"status"`
+	IsHandled  bool   `json:"isHandled"`
 }
 
 type Hashdata struct {
@@ -202,6 +204,7 @@ func CreateApply(file *File) (err error) {
 	apply.FileID = file.FileID
 	apply.FileName = file.Name
 	apply.Status = 2
+	apply.IsHandled = false
 	t := time.Now()
 	apply.Time = t.Format("2006-01-02 15:04:05")
 	if err = dao.DB.Create(&apply).Error; err != nil {
@@ -211,7 +214,7 @@ func CreateApply(file *File) (err error) {
 }
 
 func GetAllFile() (fileList []*File, err error) {
-	if err = dao.DB.Find(&fileList).Error; err != nil {
+	if err = dao.DB.Where("file_owner <> ?", Node).Find(&fileList).Error; err != nil {
 		return nil, err
 	}
 	return
@@ -269,6 +272,7 @@ func UpdateApply(apply *Apply) (err error) {
 	apply.Time = t.Format("2006-01-02 15:04:05")
 	applyproperties := apply.ApplyOwner + "#" + apply.FileOwner + "#" + apply.Time + "#" + apply.FileID + "#" + strconv.Itoa(apply.Status)
 	apply.Hash = transfer("apply", applyproperties)
+	apply.IsHandled = true
 	err = dao.DB.Save(apply).Error
 	if err != nil {
 		return err
@@ -293,7 +297,7 @@ func DeleteAFileByID(id string) (err error) {
 	}
 
 	if FileIsExisted(file.Name) == false {
-		return err
+		return errors.New("file no find!")
 	} else {
 		fmt.Println("delete success")
 		err = os.Remove(file.Name)

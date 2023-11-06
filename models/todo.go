@@ -43,6 +43,12 @@ type Apply struct {
 	IsHandled  bool   `json:"isHandled"`
 }
 
+type Applyrecord struct {
+	FileID string `json:"id"`
+	Hash   string `json:"txHash" gorm:"primary_key" `
+	Status string `json:"status"`
+}
+
 type Hashdata struct {
 	Result struct {
 		Tx struct {
@@ -266,7 +272,7 @@ func UpdateFile(file *File) (err error) {
 
 }
 
-func UpdateApply(apply *Apply) (err error) {
+func UpdateApply(apply *Apply, applyrecord *Applyrecord) (err error) {
 	//todo:需要将更改后的申请记录存入数据库
 	t := time.Now()
 	apply.Time = t.Format("2006-01-02 15:04:05")
@@ -274,6 +280,13 @@ func UpdateApply(apply *Apply) (err error) {
 	apply.Hash = transfer("apply", applyproperties)
 	apply.IsHandled = true
 	err = dao.DB.Save(apply).Error
+	if err != nil {
+		return err
+	}
+	applyrecord.FileID = apply.FileID
+	applyrecord.Hash = apply.Hash
+	applyrecord.Status = strconv.Itoa(apply.Status)
+	err = dao.DB.Save(applyrecord).Error
 	if err != nil {
 		return err
 	}
@@ -386,7 +399,31 @@ func AnalyzeData(txHash string) (Hashdata, error) {
 	return decodedata, nil
 }
 
-func TraceBackOnChain(txHash string) ([]Hashdata, Hashdata, error) {
+func Verify(applydatalist []Hashdata, sourceNode string) ([]Hashdata, error) {
+	checkNode := sourceNode
+	for init := 1; init <= len(applydatalist); init++ {
+		for j := range applydatalist {
+			applymessages := strings.Split(applydatalist[j].Result.Tx.Payload.ContentStorage.Value, "#")
+			applyOwner := applymessages[0]
+			if applyOwner == checkNode {
+				switch applymessages[4] {
+				case "4":
+					applydatalist[j].Result.Tx.Payload.ContentStorage.Value += "#fail"
+				case "5":
+					applydatalist[j].Result.Tx.Payload.ContentStorage.Value += "#success"
+				default:
+					applydatalist[j].Result.Tx.Payload.ContentStorage.Value += "#fail"
+					return applydatalist, errors.New("invalid param")
+				}
+				checkNode = applymessages[1]
+				break
+			}
+		}
+	}
+	return applydatalist, nil
+}
+
+func TraceBackOnChain(txHash string, sourceNode string) ([]Hashdata, Hashdata, [][]string, error) {
 	//todo: 传hash值，进行查询文件信息，进行错误验证。根据文件id查询申请哈希，得到申请hash，用一个数组存储循环查询申请记录
 	//1.通过文件hash，查询文件信息,取出文件ID
 	//定义结构体
@@ -396,15 +433,15 @@ func TraceBackOnChain(txHash string) ([]Hashdata, Hashdata, error) {
 	filedata, err := AnalyzeData(txHash)
 	if err != nil {
 		fmt.Println("JSON解析错误:", err)
-		return applydatalist, filedata, err
+		return applydatalist, filedata, nil, err
 	}
 	//2.取出文件ID,根据文件ID查询申请哈希，得到申请哈希，用一个数组存储循环查询申请记录
 	filemessage := filedata.Result.Tx.Payload.ContentStorage.Value
 	filemessages := strings.Split(filemessage, "#")
 	fileID := filemessages[0]
-	applylist := new([]Apply)
+	applylist := new([]Applyrecord)
 	if err = dao.DB.Where("file_id=?", fileID).Find(&applylist).Error; err != nil {
-		return applydatalist, filedata, err
+		return applydatalist, filedata, nil, err
 	}
 	//循环查询申请记录
 	for i := range *applylist {
@@ -412,5 +449,21 @@ func TraceBackOnChain(txHash string) ([]Hashdata, Hashdata, error) {
 		applydata, _ := AnalyzeData(apply.Hash)
 		applydatalist = append(applydatalist, applydata)
 	}
-	return applydatalist, filedata, err
+	//对申请信息进行核验
+	applydatalist_verified, _ := Verify(applydatalist, sourceNode)
+
+	//简化追溯信息
+	var checkdata [][]string
+	for k := range applydatalist_verified {
+		var data []string
+		applydatalist_verified_message := applydatalist_verified[k].Result.Tx.Payload.ContentStorage.Value
+		applydatalist_verified_messages := strings.Split(applydatalist_verified_message, "#")
+		data = append(data, applydatalist_verified_messages[1])
+		data = append(data, applydatalist_verified_messages[0])
+		data = append(data, applydatalist_verified_messages[2])
+		data = append(data, applydatalist_verified_messages[4])
+		data = append(data, applydatalist_verified_messages[5])
+		checkdata = append(checkdata, data)
+	}
+	return applydatalist_verified, filedata, checkdata, err
 }

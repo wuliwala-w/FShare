@@ -16,7 +16,7 @@ func main() {
 	}
 	defer dao.DB.Close()
 	//模型绑定
-	dao.DB.AutoMigrate(&models.File{}, &models.Apply{})
+	dao.DB.AutoMigrate(&models.File{}, &models.Apply{}, &models.Applyrecord{})
 	ip := models.GetHostIp()
 	fmt.Println(ip)
 	models.Node = fmt.Sprintf("%v", models.Ip2Node[ip])

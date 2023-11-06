@@ -150,8 +150,10 @@ func UpdateApplyStatus(context *gin.Context) {
 	}
 	//放入变量
 	_ = context.BindJSON(&apply)
+	applyrecord := new(models.Applyrecord)
+	_ = context.BindJSON(&applyrecord)
 	//新信息保存到数据库
-	err = models.UpdateApply(apply)
+	err = models.UpdateApply(apply, applyrecord)
 	if err != nil {
 		context.JSON(http.StatusOK, gin.H{"error": err.Error()})
 	} else {
@@ -243,12 +245,20 @@ func TraceBackOnChain(context *gin.Context) {
 		context.JSON(http.StatusOK, gin.H{"error": "txHash is not exist"})
 		return
 	}
+	//取出获取该文件的节点信息
+	sourceNode, ok := context.Params.Get("sourceNode")
+	if !ok {
+		context.JSON(http.StatusOK, gin.H{"error": "source error"})
+		return
+	}
+	sourceNode = "G"
 	//传入文件区块链哈希
-	if applydatalist, filedata, err := models.TraceBackOnChain(txHash); err != nil {
+	if applydatalist, filedata, checkdata, err := models.TraceBackOnChain(txHash, sourceNode); err != nil {
 		context.JSON(http.StatusOK, gin.H{"error": err.Error()})
 	} else {
 		context.JSON(http.StatusOK, gin.H{
 			"status":        "Trace back success",
+			"checkdata":     checkdata,
 			"filedata":      filedata,
 			"applydatalist": applydatalist,
 		})

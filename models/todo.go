@@ -399,25 +399,53 @@ func AnalyzeData(txHash string) (Hashdata, error) {
 	return decodedata, nil
 }
 
+func In(FileOwner string, checkNode []string) (err error) {
+	for i := range checkNode {
+		if FileOwner == checkNode[i] {
+			return errors.New("FileOwner made invalid charge")
+		}
+	}
+	return nil
+}
+
 func Verify(applydatalist []Hashdata, sourceNode string) ([]Hashdata, error) {
-	checkNode := sourceNode
-	for init := 1; init <= len(applydatalist); init++ {
-		for j := range applydatalist {
-			applymessages := strings.Split(applydatalist[j].Result.Tx.Payload.ContentStorage.Value, "#")
-			applyOwner := applymessages[0]
-			if applyOwner == checkNode {
-				switch applymessages[4] {
-				case "4":
-					applydatalist[j].Result.Tx.Payload.ContentStorage.Value += "#fail"
-				case "5":
-					applydatalist[j].Result.Tx.Payload.ContentStorage.Value += "#success"
-				default:
-					applydatalist[j].Result.Tx.Payload.ContentStorage.Value += "#fail"
-					return applydatalist, errors.New("invalid param")
-				}
-				checkNode = applymessages[1]
-				break
-			}
+	//checkNode := sourceNode
+	//NewcheckNode := ""
+	//for init := 1; init <= len(applydatalist); init++ {
+	//	for j := range applydatalist {
+	//		applymessages := strings.Split(applydatalist[j].Result.Tx.Payload.ContentStorage.Value, "#")
+	//		applyOwner := applymessages[0]
+	//		if applyOwner == checkNode || applyOwner == NewcheckNode {
+	//			if applyOwner == NewcheckNode {
+	//				checkNode = NewcheckNode
+	//			}
+	//			switch applymessages[4] {
+	//			case "4":
+	//				applydatalist[j].Result.Tx.Payload.ContentStorage.Value += "#fail"
+	//			case "5":
+	//				applydatalist[j].Result.Tx.Payload.ContentStorage.Value += "#success"
+	//			default:
+	//				applydatalist[j].Result.Tx.Payload.ContentStorage.Value += "#fail"
+	//				return applydatalist, errors.New("invalid param")
+	//			}
+	//			NewcheckNode = applymessages[1]
+	//		}
+	//	}
+	//}
+	var checkNode []string
+	for j := range applydatalist {
+		applymessages := strings.Split(applydatalist[j].Result.Tx.Payload.ContentStorage.Value, "#")
+		if applymessages[4] == "4" {
+			checkNode = append(checkNode, applymessages[0])
+		}
+	}
+	for k := range applydatalist {
+		applymessages := strings.Split(applydatalist[k].Result.Tx.Payload.ContentStorage.Value, "#")
+		err := In(applymessages[1], checkNode)
+		if err != nil {
+			applydatalist[k].Result.Tx.Payload.ContentStorage.Value += "#fail"
+		} else {
+			applydatalist[k].Result.Tx.Payload.ContentStorage.Value += "#success"
 		}
 	}
 	return applydatalist, nil

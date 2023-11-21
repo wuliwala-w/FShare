@@ -28,9 +28,10 @@ func IndexHandler(context *gin.Context) {
 		context.JSON(http.StatusOK, gin.H{"get file list error": err.Error()})
 	}
 	context.JSON(http.StatusOK, gin.H{
-		"myapply":   myApply,
-		"applylist": applyList,
-		"filelist":  fileList,
+		"myapply":         myApply,
+		"applylist":       applyList,
+		"filelist":        fileList,
+		"NodeInformation": models.Node,
 	})
 }
 

@@ -308,15 +308,15 @@ func DeleteAFileByID(id string) (err error) {
 	if err != nil {
 		return err
 	}
-	if FileIsExisted(file.Name) == false {
-		return errors.New("file no find!")
-	} else {
-		fmt.Println("delete success")
-		err = os.Remove(file.Name)
-		if err != nil {
-			return err
-		}
-	}
+	//if FileIsExisted(file.Name) == false {
+	//	return errors.New("file no find!")
+	//} else {
+	//	fmt.Println("delete success")
+	//	err = os.Remove(file.Name)
+	//	if err != nil {
+	//		return err
+	//	}
+	//}
 	err = dao.DB.Where("file_id=?", id).Delete(&file).Error
 	if err != nil {
 		return err

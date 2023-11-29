@@ -2,6 +2,7 @@ package controller
 
 import (
 	"FShare/models"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -225,15 +226,17 @@ func GetFingerPrint(context *gin.Context) {
 			"filetype": filetype,
 		})
 	} else {
-		//fingerprint, err := ExtractFingerPrint(filepath) //todo: 后续加上提取水印算法之后加上
-		fingerprint := filepath
-		/*file, err := models.FindtxHash(fingerprint)
+		TxHash, fingerprint, err := models.ExtractFingerPrint(filepath) //todo: 后续加上提取水印算法之后加上
+		//TxHash := "0x91aaaee91c567cea1c5aa303f79bc41acfd545d0415a390c925ccf61a5e72f55"
+		//fingerprint := "00110001111100111100111101111000011110011110101011100010101000010000111001111111000000111111111111001011010001001110110011111000"
+		fmt.Println(filepath)
+		//fingerprint = filepath
 		if err != nil {
 			context.JSON(http.StatusOK, gin.H{"error": err.Error()})
-		}*/ //todo: 后续完善了哈希功能之后加上
+		} //todo: 后续完善了哈希功能之后加上
 		context.JSON(http.StatusOK, gin.H{
 			"fingerprint": fingerprint,
-			"filetxHash":  "Hash(string)", //todo: 后续需要将这里加上
+			"filetxHash":  TxHash, //todo: 后续需要将这里加上
 		})
 	}
 }

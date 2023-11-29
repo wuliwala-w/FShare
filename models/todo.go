@@ -13,6 +13,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"strconv"
@@ -136,7 +137,9 @@ func DownloadFile(context *gin.Context, node, fileName string) (err error) {
 
 func Download(context *gin.Context, fileName string) (err error) {
 	// 构建文件路径
-	dst := fmt.Sprintf("./%s", fileName) // 修改为正确的文件路径
+	var fN = strings.Split(fileName, ".")
+
+	dst := fmt.Sprintf("./%s_FP.csv", fN[0]) // 修改为正确的文件路径
 
 	// 打开文件
 	file, err := os.Open(dst)
@@ -148,7 +151,7 @@ func Download(context *gin.Context, fileName string) (err error) {
 	defer file.Close()
 
 	// 设置响应头
-	context.Header("Content-Disposition", "attachment; filename="+fileName)
+	context.Header("Content-Disposition", "attachment; filename="+fN[0]+"_FP.csv")
 	context.Header("Content-Type", "application/octet-stream")
 
 	// 将文件内容传递给客户端
@@ -272,8 +275,22 @@ func UpdateFile(file *File) (err error) {
 
 }
 
+func EmbedFingerprint(applyHash, fileName string) error {
+	cmd := exec.Command("python", "python/embed.py", fileName, applyHash)
+
+	output, err := cmd.Output()
+	if err != nil {
+		fmt.Println(err)
+	}
+	result := string(output)
+	if result == "false" {
+		return errors.New("embed error")
+	}
+	return nil
+}
+
 func UpdateApply(apply *Apply, applyrecord *Applyrecord) (err error) {
-	//todo:需要将更改后的申请记录存入数据库
+
 	t := time.Now()
 	apply.Time = t.Format("2006-01-02 15:04:05")
 	applyproperties := apply.ApplyOwner + "#" + apply.FileOwner + "#" + apply.Time + "#" + apply.FileID + "#" + strconv.Itoa(apply.Status)
@@ -283,6 +300,13 @@ func UpdateApply(apply *Apply, applyrecord *Applyrecord) (err error) {
 	if err != nil {
 		return err
 	}
+
+	//todo:根据status=4的时候，可用不可转发
+	err = EmbedFingerprint(apply.Hash, apply.FileName)
+	if err != nil {
+		return err
+	}
+
 	applyrecord.FileID = apply.FileID
 	applyrecord.Hash = apply.Hash
 	applyrecord.Status = strconv.Itoa(apply.Status)
@@ -379,14 +403,29 @@ func GetVerifyFile(filetype string) (FilePath string, err error) {
 	return FilePath, nil
 }
 
-// 获取上传的核验文件的哈希值
-func FindtxHash(fingerprint string) (file *File, err error) {
-	file = new(File)
-	if err = dao.DB.Where("fingerprint=?", fingerprint).First(&file).Error; err != nil {
-		return nil, err
+func ExtractFingerPrint(filePath string) (string, string, error) {
+	cmd := exec.Command("python", "python/extract.py", filePath)
+
+	output, err := cmd.Output()
+	if err != nil {
+		fmt.Println(err)
 	}
-	return
+	result := strings.Split(string(output), " ")
+	if result[0] == "false" {
+		return "", "", errors.New("embed error")
+	}
+	fmt.Println(result[0])
+	return result[0], result[1], nil
 }
+
+// 获取上传的核验文件的哈希值
+//func FindtxHash(fingerprint string) (file *File, err error) {
+//	file = new(File)
+//	if err = dao.DB.Where("fingerprint=?", fingerprint).First(&file).Error; err != nil {
+//		return nil, err
+//	}
+//	return
+//}
 
 func AnalyzeData(txHash string) (Hashdata, error) {
 	encodeddata := queryTx(txHash)
@@ -457,18 +496,25 @@ func TraceBackOnChain(txHash string, sourceNode string) ([]Hashdata, Hashdata, [
 	//定义结构体
 	var filedata Hashdata
 	var applydatalist []Hashdata
+
+	fileRecord := new(Applyrecord)
+	if err := dao.DB.Where("hash=?", txHash).Find(&fileRecord).Error; err != nil {
+		return applydatalist, filedata, nil, err
+	}
 	//进行查询文件信息
-	filedata, err := AnalyzeData(txHash)
+	file := new(File)
+	if err := dao.DB.Where("file_id=?", fileRecord.FileID).Find(&file).Error; err != nil {
+		return applydatalist, filedata, nil, err
+	}
+
+	filedata, err := AnalyzeData(file.Hash)
 	if err != nil {
 		fmt.Println("JSON解析错误:", err)
 		return applydatalist, filedata, nil, err
 	}
 	//2.取出文件ID,根据文件ID查询申请哈希，得到申请哈希，用一个数组存储循环查询申请记录
-	filemessage := filedata.Result.Tx.Payload.ContentStorage.Value
-	filemessages := strings.Split(filemessage, "#")
-	fileID := filemessages[0]
 	applylist := new([]Applyrecord)
-	if err = dao.DB.Where("file_id=?", fileID).Find(&applylist).Error; err != nil {
+	if err = dao.DB.Where("file_id=?", file.FileID).Find(&applylist).Error; err != nil {
 		return applydatalist, filedata, nil, err
 	}
 	//循环查询申请记录

@@ -45,9 +45,10 @@ type Apply struct {
 }
 
 type Applyrecord struct {
-	FileID string `json:"id"`
-	Hash   string `json:"txHash" gorm:"primary_key" `
-	Status string `json:"status"`
+	FileID      string `json:"id"`
+	Hash        string `json:"txHash" gorm:"primary_key" `
+	FingerPrint string `json:"fingerprint"`
+	Status      string `json:"status"`
 }
 
 type Hashdata struct {
@@ -275,7 +276,7 @@ func UpdateFile(file *File) (err error) {
 
 }
 
-func EmbedFingerprint(applyHash, fileName string) error {
+func EmbedFingerprint(applyHash, fileName string) (string, error) {
 	cmd := exec.Command("python", "python/embed.py", fileName, applyHash)
 
 	output, err := cmd.Output()
@@ -284,9 +285,10 @@ func EmbedFingerprint(applyHash, fileName string) error {
 	}
 	result := string(output)
 	if result == "false" {
-		return errors.New("embed error")
+		return "", errors.New("embed error")
 	}
-	return nil
+
+	return result, nil
 }
 
 func UpdateApply(apply *Apply, applyrecord *Applyrecord) (err error) {
@@ -302,11 +304,11 @@ func UpdateApply(apply *Apply, applyrecord *Applyrecord) (err error) {
 	}
 
 	//todo:根据status=4的时候，可用不可转发
-	err = EmbedFingerprint(apply.Hash, apply.FileName)
+	FP, err := EmbedFingerprint(apply.Hash, apply.FileName)
 	if err != nil {
 		return err
 	}
-
+	applyrecord.FingerPrint = FP
 	applyrecord.FileID = apply.FileID
 	applyrecord.Hash = apply.Hash
 	applyrecord.Status = strconv.Itoa(apply.Status)

@@ -77,4 +77,4 @@ if __name__ == '__main__':
     if embed(sys.argv[1], sys.argv[2]) != "success":
         print("false")
     else:
-        print("success")
+        print(fp)

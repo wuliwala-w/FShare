@@ -1,7 +1,3 @@
-"""
-readme
-请看embed.py
-"""
 import hashlib
 import math
 import numpy
@@ -58,15 +54,15 @@ def extract(filename):
     extracted_fp = extracted_fp.replace("[", "").replace("]", "")  # 去括号
 
     # 读取数据库找出fp对应的sp_id
-    database_DF = pandas.read_csv("fake_database.csv", header=None)
-    for index, row in database_DF.iterrows():  # 遍历第二列，查找匹配的指纹，返回对应的sp_id
-        if row.iloc[1] == extracted_fp:
-            return row.iloc[0], row.iloc[1]
-    return '', ''  # 如果没有找到匹配的，返回空串
+    # database_DF = pandas.read_csv("fake_database.csv", header=None)
+    # for index, row in database_DF.iterrows():  # 遍历第二列，查找匹配的指纹，返回对应的sp_id
+    #     if row.iloc[1] == extracted_fp:
+    #         return row.iloc[0], row.iloc[1]
+    return extracted_fp  # 如果没有找到匹配的，返回空串
 
 
 if __name__ == '__main__':
-    hash, FP = extract(sys.argv[1])
+    FP = extract(sys.argv[1])
     if FP == '':
         print("false")
     else:

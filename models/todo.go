@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"io"
 	"io/ioutil"
 	"log"
 	"math/rand"
@@ -153,14 +152,14 @@ func Download(context *gin.Context, fileName string) (err error) {
 	// 设置响应头
 	context.Header("Content-Disposition", "attachment; filename="+fN[0]+"_FP.csv")
 	context.Header("Content-Type", "application/octet-stream")
-
+	context.File(dst)
 	// 将文件内容传递给客户端
-	_, err = io.Copy(context.Writer, file)
-	if err != nil {
-		// 处理错误
-		context.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
-		return err
-	}
+	//_, err = io.Copy(context.Writer, file)
+	//if err != nil {
+	//	// 处理错误
+	//	context.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+	//	return err
+	//}
 
 	return nil
 }
@@ -342,6 +341,11 @@ func DeleteAFileByID(id string) (err error) {
 	//		return err
 	//	}
 	//}
+	fmt.Println("delete success")
+	err = os.Remove(file.Name)
+	if err != nil {
+		return err
+	}
 	err = dao.DB.Where("file_id=?", id).Delete(&file).Error
 	if err != nil {
 		return err
@@ -405,6 +409,7 @@ func GetVerifyFile(filetype string) (FilePath string, err error) {
 }
 
 func ExtractFingerPrint(filePath string) (string, string, error) {
+	fmt.Println(filePath)
 	cmd := exec.Command("python", "python/extract.py", filePath)
 
 	output, err := cmd.Output()
@@ -417,10 +422,10 @@ func ExtractFingerPrint(filePath string) (string, string, error) {
 	}
 	fmt.Println(result)
 	applyrecord := new(Applyrecord)
-	if err = dao.DB.Where("fringerprint=?", result).Find(applyrecord).Error; err != nil {
-		return result, applyrecord.Hash, err
+	if err = dao.DB.Where("finger_print=?", result).Find(applyrecord).Error; err != nil {
+		return applyrecord.Hash, result, err
 	}
-	return result, applyrecord.Hash, nil
+	return applyrecord.Hash, result, nil
 }
 
 // 获取上传的核验文件的哈希值

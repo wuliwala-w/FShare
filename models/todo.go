@@ -29,8 +29,7 @@ type File struct {
 	Size        string `json:"size"`
 	Time        string `json:"time"`
 	Hash        string `json:"hash"`
-	//Fingerprint string `json:"fingerprint"` //todo: 后续需要将二者加上
-	Status int `json:"status"` //1:没被申请；2：正在被申请中；3：申请被拒绝；4：可用不可转发；5：可用可转发
+	Status      int    `json:"status"` //1:没被申请；2：正在被申请中；3：申请被拒绝；4：可用不可转发；5：可用可转发
 }
 
 type Apply struct {
@@ -412,12 +411,16 @@ func ExtractFingerPrint(filePath string) (string, string, error) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	result := strings.Split(string(output), " ")
-	if result[0] == "false" {
+	result := string(output)
+	if result == "false" {
 		return "", "", errors.New("embed error")
 	}
-	fmt.Println(result[0])
-	return result[0], result[1], nil
+	fmt.Println(result)
+	applyrecord := new(Applyrecord)
+	if err = dao.DB.Where("fringerprint=?", result).Find(applyrecord).Error; err != nil {
+		return result, applyrecord.Hash, err
+	}
+	return result, applyrecord.Hash, nil
 }
 
 // 获取上传的核验文件的哈希值

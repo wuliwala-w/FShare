@@ -10,8 +10,6 @@ import sys
 from scipy.special import roots_legendre
 
 
-
-
 def embed(filename, sp_id):
     # 参数已写定
     sensitivity = 1
@@ -28,7 +26,7 @@ def embed(filename, sp_id):
     # 读取文件
     R_DF = pandas.read_csv(filename, encoding='utf-8-sig')
     R = numpy.array(R_DF)
-    #R = R[0:, 0:9]  # 删除了最后一列class属性
+    # R = R[0:, 0:9]  # 删除了最后一列class属性
 
     # 嵌入过程
     rows = numpy.size(R, 0)
@@ -71,10 +69,12 @@ def embed(filename, sp_id):
     output_filename = os.path.splitext(filename)[0] + "_FP.csv"
     numpy.savetxt(output_filename, R, delimiter=',', header=','.join(R_DF.columns), fmt='%d', comments='')
 
-    return "success"
+    return fp
+
 
 if __name__ == '__main__':
-    if embed(sys.argv[1], sys.argv[2]) != "success":
+    fp = embed(sys.argv[1], sys.argv[2])
+    if fp == "":
         print("false")
     else:
         print(fp)

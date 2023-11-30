@@ -70,4 +70,4 @@ if __name__ == '__main__':
     if FP == '':
         print("false")
     else:
-        print(hash, FP)
+        print(FP)

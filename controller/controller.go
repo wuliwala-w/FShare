@@ -268,8 +268,3 @@ func TraceBackOnChain(context *gin.Context) {
 		})
 	}
 }
-
-// DetailInformation 展示详细的信息
-func DetailInformation(context *gin.Context) {
-
-}

@@ -56,9 +56,6 @@ func SetupRouter() *gin.Engine {
 		v4Group.GET("/fingerprint/:type", controller.GetFingerPrint)
 		//查询所上传文件在区块链上所保存的信息
 		v4Group.GET("/traceback/:txHash/:sourceNode", controller.TraceBackOnChain)
-		//查询追溯对比后的详细信息
-		v4Group.GET("/detail", controller.DetailInformation)
 	}
-
 	return r
 }

@@ -341,6 +341,7 @@ func DeleteAFileByID(id string) (err error) {
 	//		return err
 	//	}
 	//}
+
 	fmt.Println("delete success")
 	fileFP := strings.Split(file.Name, ".")
 	err = os.Remove(fileFP[0] + "_FP.csv")

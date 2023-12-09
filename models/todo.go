@@ -328,30 +328,27 @@ func FileIsExisted(filename string) bool {
 
 func DeleteAFileByID(id string) (err error) {
 	var file File
+	//删除数据库条目
 	err = dao.DB.Where("file_id=?", id).Find(&file).Error
 	if err != nil {
 		return err
 	}
-	//if FileIsExisted(file.Name) == false {
-	//	return errors.New("file no find!")
-	//} else {
-	//	fmt.Println("delete success")
-	//	err = os.Remove(file.Name)
-	//	if err != nil {
-	//		return err
-	//	}
-	//}
-
-	fmt.Println("delete success")
+	//删除本地源文件
+	err = os.Remove("csvfile/" + file.Name)
+	if err != nil {
+		return err
+	}
+	//删除嵌入了水印的文件
 	fileFP := strings.Split(file.Name, ".")
-	err = os.Remove(fileFP[0] + "_FP.csv")
-	if err != nil {
-		return err
+	fileFP_Name := fileFP[0] + "_FP.csv"
+	if FileIsExisted(fileFP_Name) == true {
+		fmt.Println("delete success")
+		err = os.Remove("csvfile/" + fileFP_Name)
+		if err != nil {
+			return err
+		}
 	}
-	err = os.Remove(file.Name)
-	if err != nil {
-		return err
-	}
+
 	err = dao.DB.Where("file_id=?", id).Delete(&file).Error
 	if err != nil {
 		return err

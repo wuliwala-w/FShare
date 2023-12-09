@@ -416,7 +416,7 @@ func GetVerifyFile(filetype string) (FilePath string, err error) {
 
 func ExtractFingerPrint(filePath string) (string, string, error) {
 	fmt.Println(filePath)
-	cmd := exec.Command("python", "python/extract.py", filePath)
+	cmd := exec.Command("D:\\Reaserch\\System development\\project\\venv\\Scripts\\python.exe", "python/extract.py", filePath)
 
 	output, err := cmd.Output()
 	if err != nil {

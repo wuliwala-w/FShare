@@ -24,7 +24,7 @@ def embed(filename, sp_id):
     fp = bin(int(fp, 16))[2:].zfill(128)  # 转二进制，舍弃0b前缀，补充前导0至128位
 
     # 读取文件
-    R_DF = pandas.read_csv(filename, encoding='utf-8-sig')
+    R_DF = pandas.read_csv("./csvfile/"+filename, encoding='utf-8-sig')
     R = numpy.array(R_DF)
     # R = R[0:, 0:9]  # 删除了最后一列class属性
 
@@ -66,7 +66,7 @@ def embed(filename, sp_id):
 
     # 保存嵌入指纹的数据库
     # 该算法只能处理整数，fmt='%d'代表将所有数据强转为整数形式输出到新表，如果去掉用户则应手动将excel里的数据转换为整数再提取指纹，否则报错
-    output_filename = os.path.splitext(filename)[0] + "_FP.csv"
+    output_filename = "./csvfile/"+os.path.splitext(filename)[0] + "_FP.csv"
     numpy.savetxt(output_filename, R, delimiter=',', header=','.join(R_DF.columns), fmt='%d', comments='')
 
     return fp

@@ -138,7 +138,7 @@ func Download(context *gin.Context, fileName string) (err error) {
 	// 构建文件路径
 	var fN = strings.Split(fileName, ".")
 
-	dst := fmt.Sprintf("./%s_FP.csv", fN[0]) // 修改为正确的文件路径
+	dst := fmt.Sprintf("./csvfile/%s_FP.csv", fN[0]) // 修改为正确的文件路径
 
 	// 打开文件
 	file, err := os.Open(dst)
@@ -182,7 +182,7 @@ func UploadFiles(context *gin.Context) (err error) {
 		})
 	} else {
 		//保存读取的文件到本地服务器
-		dst := path.Join("./", f.Filename) //todo:这里修改文件路径
+		dst := path.Join("./csvfile/", f.Filename) //todo:这里修改文件路径
 		_ = context.SaveUploadedFile(f, dst)
 		context.JSON(http.StatusOK, gin.H{
 			"status": "ok",
@@ -196,6 +196,7 @@ func UploadFiles(context *gin.Context) (err error) {
 		//file.Status = 1
 		fileproperties := file.FileID + "#" + file.Name + "#" + file.FileOwner + "#" + file.Description + "#" + file.Size + "#" + file.Time + "#" + strconv.Itoa(file.Status)
 		fmt.Println(fileproperties)
+		//上传区块链
 		file.Hash = transfer("file", fileproperties)
 		//file.Fingerprint = GenertaeFingerPrint(file)
 		if err = dao.DB.Create(&file).Error; err != nil {
@@ -344,11 +345,11 @@ func DeleteAFileByID(id string) (err error) {
 
 	fmt.Println("delete success")
 	fileFP := strings.Split(file.Name, ".")
-	err = os.Remove(fileFP[0] + "_FP.csv")
+	err = os.Remove("csvfile/" + fileFP[0] + "_FP.csv")
 	if err != nil {
 		return err
 	}
-	err = os.Remove(file.Name)
+	err = os.Remove("csvfile/" + file.Name)
 	if err != nil {
 		return err
 	}

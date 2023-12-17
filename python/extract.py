@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 readme
 请看embed.py

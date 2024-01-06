@@ -87,6 +87,7 @@ var IP = gin.H{
 	"E": "124.222.196.78", //唐聪
 	"F": "10.96.92.7",     //kxq
 	"G": "10.96.208.18",   //wyc
+	"Y": "10.0.4.14",      //云服务器
 }
 
 var Ip2Node = gin.H{
@@ -97,6 +98,7 @@ var Ip2Node = gin.H{
 	"124.222.196.78": "E", //唐聪
 	"10.96.92.7":     "F", //kxq
 	"10.96.208.18":   "G", //wyc
+	"10.0.4.14":      "Y", //云服务器
 }
 
 var Node string //节点
@@ -182,7 +184,7 @@ func UploadFiles(context *gin.Context) (err error) {
 		})
 	} else {
 		//保存读取的文件到本地服务器
-		dst := path.Join("./csvfile/", f.Filename) //todo:这里修改文件路径
+		dst := path.Join("./csvfile", f.Filename) //todo:这里修改文件路径
 		_ = context.SaveUploadedFile(f, dst)
 		context.JSON(http.StatusOK, gin.H{
 			"status": "ok",
@@ -196,7 +198,6 @@ func UploadFiles(context *gin.Context) (err error) {
 		//file.Status = 1
 		fileproperties := file.FileID + "#" + file.Name + "#" + file.FileOwner + "#" + file.Description + "#" + file.Size + "#" + file.Time + "#" + strconv.Itoa(file.Status)
 		fmt.Println(fileproperties)
-		//上传区块链
 		file.Hash = transfer("file", fileproperties)
 		//file.Fingerprint = GenertaeFingerPrint(file)
 		if err = dao.DB.Create(&file).Error; err != nil {
@@ -276,7 +277,7 @@ func UpdateFile(file *File) (err error) {
 }
 
 func EmbedFingerprint(applyHash, fileName string) (string, error) {
-	cmd := exec.Command("python", "python/embed.py", fileName, applyHash)
+	cmd := exec.Command("D:\\Reaserch\\System development\\project\\FShare\\venv\\Scripts\\python.exe", "python/embed.py", fileName, applyHash)
 
 	output, err := cmd.Output()
 	if err != nil {
@@ -321,7 +322,7 @@ func UpdateApply(apply *Apply, applyrecord *Applyrecord) (err error) {
 
 func FileIsExisted(filename string) bool {
 	existed := true
-	if _, err := os.Stat(filename); os.IsNotExist(err) {
+	if _, err := os.Stat("csvfile/" + filename); os.IsNotExist(err) {
 		existed = false
 	}
 	return existed
@@ -329,30 +330,27 @@ func FileIsExisted(filename string) bool {
 
 func DeleteAFileByID(id string) (err error) {
 	var file File
+	//删除数据库条目
 	err = dao.DB.Where("file_id=?", id).Find(&file).Error
 	if err != nil {
 		return err
 	}
-	//if FileIsExisted(file.Name) == false {
-	//	return errors.New("file no find!")
-	//} else {
-	//	fmt.Println("delete success")
-	//	err = os.Remove(file.Name)
-	//	if err != nil {
-	//		return err
-	//	}
-	//}
-
-	fmt.Println("delete success")
-	fileFP := strings.Split(file.Name, ".")
-	err = os.Remove("csvfile/" + fileFP[0] + "_FP.csv")
-	if err != nil {
-		return err
-	}
+	//删除本地源文件
 	err = os.Remove("csvfile/" + file.Name)
 	if err != nil {
 		return err
 	}
+	//删除嵌入了水印的文件
+	fileFP := strings.Split(file.Name, ".")
+	fileFP_Name := fileFP[0] + "_FP.csv"
+	if FileIsExisted(fileFP_Name) == true {
+		fmt.Println("delete success")
+		err = os.Remove("csvfile/" + fileFP_Name)
+		if err != nil {
+			return err
+		}
+	}
+
 	err = dao.DB.Where("file_id=?", id).Delete(&file).Error
 	if err != nil {
 		return err
@@ -417,7 +415,7 @@ func GetVerifyFile(filetype string) (FilePath string, err error) {
 
 func ExtractFingerPrint(filePath string) (string, string, error) {
 	fmt.Println(filePath)
-	cmd := exec.Command("python", "python/extract.py", filePath)
+	cmd := exec.Command("D:\\Reaserch\\System development\\project\\FShare\\venv\\Scripts\\python.exe", "python/extract.py", filePath)
 
 	output, err := cmd.Output()
 	if err != nil {

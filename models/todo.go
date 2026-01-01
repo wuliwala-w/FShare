@@ -22,10 +22,21 @@ import (
 	"time"
 )
 
+// 写死用于监管机构进行展示
+type User struct {
+	UserID          string `json:"userID" gorm:"primary_key"`
+	LoginAccount    string `json:"loginAccount"`
+	Password        string `json:"password"`
+	UserName        string `json:"userName"`
+	UserEmail       string `json:"userEmail"`
+	Time            string `json:"time"`
+	UserFingerPrint string `json:"userFingerPrint"`
+}
+
 type File struct {
 	FileID      string `json:"id" gorm:"primary_key"`
 	Name        string `json:"name"`
-	FileOwner   string `json:"fileOwner"`
+	FileOwner   string `json:"fileOwner" gorm:"primary_key"`
 	Description string `json:"description"`
 	Size        string `json:"size"`
 	Time        string `json:"time"`
@@ -34,14 +45,16 @@ type File struct {
 }
 
 type Apply struct {
-	ApplyOwner string `json:"applyOwner" gorm:"primary_key"`
-	FileOwner  string `json:"fileOwner"`
-	Time       string `json:"time"`
-	FileID     string `json:"id" gorm:"primary_key"`
-	FileName   string `json:"fileName"`
-	Hash       string `json:"txHash"`
-	Status     int    `json:"status"`
-	IsHandled  bool   `json:"isHandled"`
+	ApplyOwner    string `json:"applyOwner" gorm:"primary_key"`
+	FileOwner     string `json:"fileOwner" gorm:"primary_key"`
+	Time          string `json:"time"`
+	FileID        string `json:"id" gorm:"primary_key"`
+	FileName      string `json:"fileName"`
+	Hash          string `json:"txHash"`
+	Status        int    `json:"status"`
+	FingerPrint   string `json:"fingerPrint"`
+	PrivacyBudget string `json:"privacyBudget"`
+	IsHandled     bool   `json:"isHandled"`
 }
 
 type Applyrecord struct {
@@ -82,25 +95,19 @@ type Hashdata struct {
 }
 
 var IP = gin.H{
-	"A": "124.223.171.19", //王钺程
-	"B": "101.43.94.172",  //李炳翰
-	"C": "124.221.254.11", //金严
-	"D": "124.223.210.53", //叶克炉
-	"E": "124.222.196.78", //唐聪
-	"F": "10.96.228.235",  //kxq
-	"G": "10.96.208.18",   //wyc
-	"Y": "10.0.4.14",      //云服务器
+	"A": "124.223.171.19",
+	"B": "101.43.94.172",
+	"C": "124.221.254.11",
+	"D": "124.223.210.53",
+	"E": "124.222.196.78",
 }
 
 var Ip2Node = gin.H{
 	"124.223.171.19": "A",
 	"101.43.94.172":  "B",
 	"124.221.254.11": "C",
-	"124.223.210.53": "D", //叶克炉
-	"124.222.196.78": "E", //唐聪
-	"10.96.228.235":  "F", //kxq
-	"10.96.208.18":   "G", //wyc
-	"10.0.4.14":      "Y", //云服务器
+	"124.223.210.53": "D",
+	"124.222.196.78": "E",
 }
 
 var Node string //节点
@@ -124,9 +131,9 @@ func GetHostIp() string {
 	return ip
 }
 
-func DownloadFile(context *gin.Context, node, fileName string) (err error) {
+func DownloadFile(context *gin.Context, node, fileName, applyOwner string) (err error) {
 	str := fmt.Sprintf("%v", IP[node])
-	address := "http://" + str + ":8080/download/" + fileName
+	address := "http://" + str + ":8080/download/" + fileName + "/" + applyOwner
 	//fmt.Println(str)
 	context.Redirect(http.StatusMovedPermanently, address)
 	return
@@ -142,11 +149,11 @@ func DownloadFile(context *gin.Context, node, fileName string) (err error) {
 //	return
 //}
 
-func Download(context *gin.Context, fileName string) (err error) {
+func Download(context *gin.Context, fileName, applyOwner string) (err error) {
 	// 构建文件路径
 	var fN = strings.Split(fileName, ".")
 
-	dst := fmt.Sprintf("./csvfile/%s_FP.csv", fN[0]) // 修改为正确的文件路径
+	dst := fmt.Sprintf("./csvfile/%s_%s_FP.csv", fN[0], applyOwner) // 修改为正确的文件路径
 
 	// 打开文件
 	file, err := os.Open(dst)
@@ -169,6 +176,52 @@ func Download(context *gin.Context, fileName string) (err error) {
 	//	return err
 	//}
 
+	return nil
+}
+
+// 下载生成权限标识后的文件
+func DownloadTransformedFile(context *gin.Context, fileName string) (err error) {
+	// 构建文件路径
+	var fN = strings.Split(fileName, ".")
+
+	dst := fmt.Sprintf("./csvfile/%s_FP.csv", fN[0]) // 修改为正确的文件路径
+
+	// 打开文件
+	file, err := os.Open(dst)
+	if err != nil {
+		// 处理错误
+		context.JSON(http.StatusNotFound, gin.H{"error": "File not found"})
+		return err
+	}
+	defer file.Close()
+
+	// 设置响应头
+	context.Header("Content-Disposition", "attachment; filename="+fN[0]+"_FP.csv")
+	context.Header("Content-Type", "application/octet-stream")
+	context.File(dst)
+	return nil
+}
+
+// 下载本地文件
+func DownloadLocalFile(context *gin.Context, fileName string) (err error) {
+	// 构建文件路径
+	var fN = strings.Split(fileName, ".")
+
+	dst := fmt.Sprintf("./csvfile/%s.csv", fN[0]) // 修改为正确的文件路径
+
+	// 打开文件
+	file, err := os.Open(dst)
+	if err != nil {
+		// 处理错误
+		context.JSON(http.StatusNotFound, gin.H{"error": "File not found"})
+		return err
+	}
+	defer file.Close()
+
+	// 设置响应头
+	context.Header("Content-Disposition", "attachment; filename="+fN[0]+"_FP.csv")
+	context.Header("Content-Type", "application/octet-stream")
+	context.File(dst)
 	return nil
 }
 
@@ -213,6 +266,79 @@ func UploadFiles(context *gin.Context) (err error) {
 	return
 }
 
+//func UploadFiles(context *gin.Context) (err error) {
+//	var file File
+//
+//	//file.FileOwner = context.PostForm("fileOwner") //todo：后面改成Node，这里测试不同节点用
+//	file.FileOwner = Node
+//	file.Name = context.PostForm("name")
+//	file.Description = context.PostForm("description")
+//	file.Size = context.PostForm("size")
+//	file.Status, _ = strconv.Atoi(context.PostForm("status"))
+//
+//	f, err := context.FormFile("f1")
+//	if err != nil {
+//		context.JSON(http.StatusBadRequest, gin.H{
+//			"error": err.Error(),
+//		})
+//	} else {
+//		t := time.Now()
+//		file.Time = t.Format("2006-01-02 15:04:05")
+//		file.Name = ModifyFileName(file.Name, file.Time) //为文件名加上时间标识，保证同名文件不会被覆盖
+//		f.Filename = file.Name                           //+".xml" todo:这里更改文件名可以加xml后缀
+//		//保存读取的文件到本地服务器
+//		dst := path.Join("./csvfile", f.Filename) //todo:这里修改文件路径
+//		err = context.SaveUploadedFile(f, dst)
+//		if err != nil {
+//			return err
+//		}
+//		context.JSON(http.StatusOK, gin.H{
+//			"status": "ok",
+//		})
+//		//生成文件ID
+//		timestamp := strconv.FormatInt(t.UTC().UnixNano(), 10)
+//		randnum := fmt.Sprintf("%04v", rand.New(rand.NewSource(time.Now().UnixNano())).Int31n(10000))
+//		file.FileID = Node + timestamp + randnum
+//		//file.Status = 1
+//		fileproperties := file.FileID + "#" + file.Name + "#" + file.FileOwner + "#" + file.Description + "#" + file.Size + "#" + file.Time + "#" + strconv.Itoa(file.Status)
+//		fmt.Println(fileproperties)
+//		file.Hash = transfer("file", fileproperties)
+//		//file.Fingerprint = GenertaeFingerPrint(file)
+//		if err = dao.DB.Create(&file).Error; err != nil {
+//			return err
+//		}
+//	}
+//	return
+//}
+//
+//// ModifyFileName 函数用于修改文件名
+//func ModifyFileName(fileName, fileTime string) string {
+//	// 从 '.' 开始分割文件名
+//	parts := strings.Split(fileName, ".")
+//	if len(parts) != 2 {
+//		// 如果文件名格式不正确，直接返回原文件名
+//		return fileName
+//	}
+//
+//	// 从空格开始分割时间
+//	timeParts := strings.Split(fileTime, " ")
+//	if len(timeParts) != 2 {
+//		// 如果时间格式不正确，直接返回原文件名
+//		return fileName
+//	}
+//
+//	// 去掉时间部分的冒号
+//	timeParts[1] = strings.ReplaceAll(timeParts[1], ":", "")
+//	timeParts[0] = strings.ReplaceAll(timeParts[0], "-", "")
+//
+//	// 用 '-' 连接日期和时间
+//	processedTime := strings.Join(timeParts, "")
+//
+//	// 拼接新的文件名
+//	newFileName := fmt.Sprintf("%s_%s.%s", parts[0], processedTime, parts[1])
+//	return newFileName
+//}
+
 func CreateApply(file *File) (err error) {
 	var apply Apply
 	apply.ApplyOwner = Node
@@ -220,6 +346,7 @@ func CreateApply(file *File) (err error) {
 	apply.FileID = file.FileID
 	apply.FileName = file.Name
 	apply.Status = 2
+	apply.FingerPrint = ""
 	apply.IsHandled = false
 	t := time.Now()
 	apply.Time = t.Format("2006-01-02 15:04:05")
@@ -257,17 +384,17 @@ func GetApplyList() (applyList []*Apply, err error) {
 	return
 }
 
-func GetFileByID(id string) (file *File, err error) {
+func GetFileByID(id, fileOwner string) (file *File, err error) {
 	file = new(File)
-	if err = dao.DB.Where("file_id = ?", id).First(&file).Error; err != nil {
+	if err = dao.DB.Where("file_id = ? and file_owner = ?", id, fileOwner).First(&file).Error; err != nil {
 		return nil, err
 	}
 	return
 }
 
-func GetApply(id, owner string) (apply *Apply, err error) {
+func GetApply(id, owner, fileOwner string) (apply *Apply, err error) {
 	apply = new(Apply)
-	if err = dao.DB.Where("file_id = ? and apply_owner = ?", id, owner).First(&apply).Error; err != nil {
+	if err = dao.DB.Where("file_id = ? and apply_owner = ? and file_owner = ?", id, owner, fileOwner).First(&apply).Error; err != nil {
 		return nil, err
 	}
 	return
@@ -282,10 +409,10 @@ func UpdateFile(file *File) (err error) {
 
 }
 
-func EmbedFingerprint(applyHash, fileName string) (string, error) {
-	//cmd := exec.Command("D:\\Reaserch\\System development\\project\\FShare\\venv\\Scripts\\python.exe", "python/embed.py", fileName, applyHash)
-	cmd := exec.Command("/root/Y/venv/bin/python", "python/embed.py", fileName, applyHash)
-	//cmd := exec.Command("/usr/bin/python", "python/embed.py", fileName, applyHash)
+func EmbedFingerprint(applyOwner, applyHash, epsilon, fileName string) (string, error) {
+	//cmd := exec.Command("venv\\Scripts\\python.exe", "python/embed.py", fileName, applyHash, epsilon, applyOwner)
+	cmd := exec.Command("./venv/bin/python", "python/embed.py", fileName, applyHash, epsilon, applyOwner)
+	//cmd := exec.Command("/usr/bin/python", "python/embed.py", fileName, applyHash, fingerprint, epsilon)
 
 	output, err := cmd.Output()
 	if err != nil {
@@ -300,20 +427,39 @@ func EmbedFingerprint(applyHash, fileName string) (string, error) {
 	return result, nil
 }
 
+func GenerateFingerprint(applyHash string) (string, error) {
+	//cmd := exec.Command("venv\\Scripts\\python.exe", "python/embed.py", applyHash)
+	cmd := exec.Command("./venv/bin/python", "python/generate.py", applyHash)
+	//cmd := exec.Command("/usr/bin/python", "python/embed.py", fileName, applyHash)
+
+	output, err := cmd.Output()
+	if err != nil {
+		fmt.Println(err)
+	}
+	result := string(output)
+	if result == "false" {
+		return "", errors.New("generate error")
+	}
+
+	print(result)
+	return result, nil
+}
+
 func UpdateApply(apply *Apply, applyrecord *Applyrecord) (err error) {
 
 	t := time.Now()
 	apply.Time = t.Format("2006-01-02 15:04:05")
 	applyproperties := apply.ApplyOwner + "#" + apply.FileOwner + "#" + apply.Time + "#" + apply.FileID + "#" + strconv.Itoa(apply.Status)
 	apply.Hash = transfer("apply", applyproperties)
-	apply.IsHandled = true
-	err = dao.DB.Save(apply).Error
+	//apply.IsHandled = true
+
+	//todo:根据status=4的时候，可用不可转发
+	FP, err := GenerateFingerprint(apply.Hash)
 	if err != nil {
 		return err
 	}
-
-	//todo:根据status=4的时候，可用不可转发
-	FP, err := EmbedFingerprint(apply.Hash, apply.FileName)
+	apply.FingerPrint = FP
+	err = dao.DB.Save(apply).Error
 	if err != nil {
 		return err
 	}
@@ -329,6 +475,22 @@ func UpdateApply(apply *Apply, applyrecord *Applyrecord) (err error) {
 
 }
 
+func UpdataPrivacyBudget(apply *Apply, epsilon string) (err error) {
+
+	apply.IsHandled = true
+	apply.PrivacyBudget = epsilon
+	_, err = EmbedFingerprint(apply.ApplyOwner, apply.Hash, apply.PrivacyBudget, apply.FileName)
+	if err != nil {
+		return err
+	}
+	err = dao.DB.Save(apply).Error
+	if err != nil {
+		return err
+	}
+	return
+
+}
+
 func FileIsExisted(filename string) bool {
 	existed := true
 	if _, err := os.Stat("csvfile/" + filename); os.IsNotExist(err) {
@@ -337,10 +499,10 @@ func FileIsExisted(filename string) bool {
 	return existed
 }
 
-func DeleteAFileByID(id string) (err error) {
+func DeleteAFileByID(id, fileOwner string) (err error) {
 	var file File
 	//删除数据库条目
-	err = dao.DB.Where("file_id=?", id).Find(&file).Error
+	err = dao.DB.Where("file_id=? and file_owner = ?", id, fileOwner).Find(&file).Error
 	if err != nil {
 		return err
 	}
@@ -351,24 +513,27 @@ func DeleteAFileByID(id string) (err error) {
 	}
 	//删除嵌入了水印的文件
 	fileFP := strings.Split(file.Name, ".")
-	fileFP_Name := fileFP[0] + "_FP.csv"
-	if FileIsExisted(fileFP_Name) == true {
-		fmt.Println("delete success")
-		err = os.Remove("csvfile/" + fileFP_Name)
-		if err != nil {
-			return err
+	Node_delete := [...]string{"A", "B", "C", "D", "E"}
+	for _, node := range Node_delete {
+		fileFP_Name := fileFP[0] + "_" + node + "_FP.csv"
+		if FileIsExisted(fileFP_Name) == true {
+			fmt.Println("delete success")
+			err = os.Remove("csvfile/" + fileFP_Name)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
-	err = dao.DB.Where("file_id=?", id).Delete(&file).Error
+	err = dao.DB.Where("file_id=? and file_owner=?", id, fileOwner).Delete(&file).Error
 	if err != nil {
 		return err
 	}
 	return
 }
 
-func DeleteApply(id, owner string) (err error) {
-	err = dao.DB.Where("file_id=? and apply_owner=?", id, owner).Delete(&Apply{}).Error
+func DeleteApply(id, owner, fileOwner string) (err error) {
+	err = dao.DB.Where("file_id=? and apply_owner=? and file_owner = ?", id, owner, fileOwner).Delete(&Apply{}).Error
 	if err != nil {
 		return err
 	}
@@ -422,10 +587,10 @@ func GetVerifyFile(filetype string) (FilePath string, err error) {
 	return FilePath, nil
 }
 
-func ExtractFingerPrint(filePath string) (string, string, string, error) {
+func ExtractFingerPrint(filePath, epsilon string) (string, string, string, error) {
 	fmt.Println(filePath)
-	//cmd := exec.Command("D:\\Reaserch\\System development\\project\\FShare\\venv\\Scripts\\python.exe", "python/extract.py", filePath)
-	cmd := exec.Command("/root/Y/venv/bin/python", "python/extract.py", filePath)
+	//cmd := exec.Command("D:\\Reaserch\\System development\\project\\FShare\\venv\\Scripts\\python.exe", "python/extract.py", filePath, epsilon)
+	cmd := exec.Command("./venv/bin/python", "python/extract.py", filePath, epsilon)
 	//cmd := exec.Command("/usr/bin/python", "python/extract.py", filePath)
 
 	output, err := cmd.Output()
@@ -476,7 +641,7 @@ func In(FileOwner string, checkNode []string) (err error) {
 	return nil
 }
 
-func Verify(applydatalist []Hashdata, sourceNode string) ([]Hashdata, error) {
+func Verify(applydatalist []Hashdata, sourceNode string, FingerprintingNode string) (bool, error) {
 	//checkNode := sourceNode
 	//NewcheckNode := ""
 	//for init := 1; init <= len(applydatalist); init++ {
@@ -500,51 +665,49 @@ func Verify(applydatalist []Hashdata, sourceNode string) ([]Hashdata, error) {
 	//		}
 	//	}
 	//}
-	var checkNode []string
+	//var checkNode []string
+	//for j := range applydatalist {
+	//	applymessages := strings.Split(applydatalist[j].Result.Tx.Payload.ContentStorage.Value, "#")
+	//	if applymessages[4] == "4" {
+	//		checkNode = append(checkNode, applymessages[0])
+	//	}
+	//}
+	//for k := range applydatalist {
+	//	applymessages := strings.Split(applydatalist[k].Result.Tx.Payload.ContentStorage.Value, "#")
+	//	err := In(applymessages[1], checkNode)
+	//	if err != nil {
+	//		applydatalist[k].Result.Tx.Payload.ContentStorage.Value += "#fail"
+	//	} else {
+	//		applydatalist[k].Result.Tx.Payload.ContentStorage.Value += "#success"
+	//	}
+	//}
+	IsLegal := false
+	if sourceNode == FingerprintingNode {
+		return true, nil
+	}
 	for j := range applydatalist {
 		applymessages := strings.Split(applydatalist[j].Result.Tx.Payload.ContentStorage.Value, "#")
-		if applymessages[4] == "4" {
-			checkNode = append(checkNode, applymessages[0])
+		if applymessages[0] == sourceNode && applymessages[1] == FingerprintingNode || applymessages[0] == FingerprintingNode && applymessages[1] == sourceNode {
+			IsLegal = true
+			break
 		}
 	}
-	for k := range applydatalist {
-		applymessages := strings.Split(applydatalist[k].Result.Tx.Payload.ContentStorage.Value, "#")
-		err := In(applymessages[1], checkNode)
-		if err != nil {
-			applydatalist[k].Result.Tx.Payload.ContentStorage.Value += "#fail"
-		} else {
-			applydatalist[k].Result.Tx.Payload.ContentStorage.Value += "#success"
-		}
-	}
-	return applydatalist, nil
+	return IsLegal, nil
 }
 
-func TraceBackOnChain(txHash string, sourceNode string) ([]Hashdata, Hashdata, [][]string, error) {
-	//todo: 传hash值，进行查询文件信息，进行错误验证。根据文件id查询申请哈希，得到申请hash，用一个数组存储循环查询申请记录
+func TraceBackOnChain(txHash string, sourceNode string) ([]Hashdata, [][]string, string, string, bool, error) {
 	//1.通过文件hash，查询文件信息,取出文件ID
 	//定义结构体
-	var filedata Hashdata
 	var applydatalist []Hashdata
 
-	fileRecord := new(Applyrecord)
-	if err := dao.DB.Where("hash=?", txHash).Find(&fileRecord).Error; err != nil {
-		return applydatalist, filedata, nil, err
-	}
-	//进行查询文件信息
-	file := new(File)
-	if err := dao.DB.Where("file_id=?", fileRecord.FileID).Find(&file).Error; err != nil {
-		return applydatalist, filedata, nil, err
-	}
-
-	filedata, err := AnalyzeData(file.Hash)
-	if err != nil {
-		fmt.Println("JSON解析错误:", err)
-		return applydatalist, filedata, nil, err
-	}
+	fileRecord, _ := AnalyzeData(txHash)
+	fileRecord2 := strings.Split(fileRecord.Result.Tx.Payload.ContentStorage.Value, "#")
+	//文件指纹所有者
+	FingerprintingNode := fileRecord2[0]
 	//2.取出文件ID,根据文件ID查询申请哈希，得到申请哈希，用一个数组存储循环查询申请记录
 	applylist := new([]Applyrecord)
-	if err = dao.DB.Where("file_id=?", file.FileID).Find(&applylist).Error; err != nil {
-		return applydatalist, filedata, nil, err
+	if err := dao.DB.Where("file_id=?", fileRecord2[3]).Find(&applylist).Error; err != nil {
+		return applydatalist, nil, sourceNode, "", false, err
 	}
 	//循环查询申请记录
 	for i := range *applylist {
@@ -553,22 +716,21 @@ func TraceBackOnChain(txHash string, sourceNode string) ([]Hashdata, Hashdata, [
 		applydatalist = append(applydatalist, applydata)
 	}
 	//对申请信息进行核验
-	applydatalist_verified, _ := Verify(applydatalist, sourceNode)
+	IsLegal, _ := Verify(applydatalist, sourceNode, FingerprintingNode)
 
 	//简化追溯信息
 	var checkdata [][]string
-	for k := range applydatalist_verified {
+	for k := range applydatalist {
 		var data []string
-		applydatalist_verified_message := applydatalist_verified[k].Result.Tx.Payload.ContentStorage.Value
-		applydatalist_verified_messages := strings.Split(applydatalist_verified_message, "#")
-		data = append(data, applydatalist_verified_messages[1])
-		data = append(data, applydatalist_verified_messages[0])
-		data = append(data, applydatalist_verified_messages[2])
-		data = append(data, applydatalist_verified_messages[4])
-		data = append(data, applydatalist_verified_messages[5])
+		applydatalist_message := applydatalist[k].Result.Tx.Payload.ContentStorage.Value
+		applydatalist_messages := strings.Split(applydatalist_message, "#")
+		data = append(data, applydatalist_messages[1])
+		data = append(data, applydatalist_messages[0])
+		data = append(data, applydatalist_messages[2])
+		data = append(data, applydatalist_messages[4])
 		checkdata = append(checkdata, data)
 	}
-	return applydatalist_verified, filedata, checkdata, err
+	return applydatalist, checkdata, sourceNode, FingerprintingNode, IsLegal, nil
 }
 
 // 将效用分析文件保存到效用分析缓存区
@@ -703,8 +865,8 @@ func DOUtility(context *gin.Context, fileName string) ([][]float64, [][]float64,
 	var Accuracy, W_Precision, W_Recall, W_F1 [][]float64
 
 	// 使用 exec.Command 执行 Python 脚本
-	//cmd := exec.Command("D:\\Reaserch\\Go_WorkSpace\\go_tour\\venv\\Scripts\\python.exe", "python/Model_Train.py", dst_original, dst_perturbed)
-	cmd := exec.Command("/root/Y/venv/bin/python", "python/Model_Train.py", dst_original, dst_perturbed)
+	//cmd := exec.Command("venv\\Scripts\\python.exe", "python/Model_Train.py", dst_original, dst_perturbed)
+	cmd := exec.Command("./venv/bin/python", "python/Model_Train.py", dst_original, dst_perturbed)
 	//cmd := exec.Command("/usr/bin/python", "python/Model_Train.py", dst_original, dst_perturbed)
 
 	// 创建缓冲区来捕获输出和错误
@@ -755,8 +917,8 @@ func DOUtility2(context *gin.Context) ([][]float64, [][]float64, [][]float64, []
 	var Accuracy, W_Precision, W_Recall, W_F1 [][]float64
 
 	// 使用 exec.Command 执行 Python 脚本
-	//cmd := exec.Command("D:\\Reaserch\\Go_WorkSpace\\go_tour\\venv\\Scripts\\python.exe", "python/Model_Train2.py", dst)
-	cmd := exec.Command("/root/Y/venv/bin/python", "python/Model_Train2.py", dst)
+	//cmd := exec.Command("venv\\Scripts\\python.exe", "python/Model_Train2.py", dst)
+	cmd := exec.Command("./venv/bin/python", "python/Model_Train2.py", dst)
 	//cmd := exec.Command("/usr/bin/python", "python/Model_Train2.py", dst)
 
 	// 创建缓冲区来捕获输出和错误
@@ -829,4 +991,42 @@ func DownloadModel(context *gin.Context, ModelName, Type string) (err error) {
 	context.File(dst)
 
 	return nil
+}
+
+func AddFile(context *gin.Context) (err error) {
+	var file File
+
+	//file.FileOwner = context.PostForm("fileOwner") //todo：后面改成Node，这里测试不同节点用
+	file.FileOwner = Node
+	file.FileID = context.PostForm("file_id")
+	file.Name = context.PostForm("name")
+	file.Description = context.PostForm("description")
+	file.Size = context.PostForm("size")
+	file.Status, _ = strconv.Atoi(context.PostForm("status"))
+
+	f, err := context.FormFile("f1")
+	f.Filename = file.Name //+".xml" todo:这里更改文件名可以加xml后缀
+	if err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+	} else {
+		//保存读取的文件到本地服务器
+		dst := path.Join("./csvfile", f.Filename) //todo:这里修改文件路径
+		_ = context.SaveUploadedFile(f, dst)
+		context.JSON(http.StatusOK, gin.H{
+			"status": "ok",
+		})
+		//file.Status = 1
+		t := time.Now()
+		file.Time = t.Format("2006-01-02 15:04:05")
+		fileproperties := file.FileID + "#" + file.Name + "#" + file.FileOwner + "#" + file.Description + "#" + file.Size + "#" + file.Time + "#" + strconv.Itoa(file.Status)
+		fmt.Println(fileproperties)
+		file.Hash = transfer("file", fileproperties)
+		//file.Fingerprint = GenertaeFingerPrint(file)
+		if err = dao.DB.Create(&file).Error; err != nil {
+			return err
+		}
+	}
+	return
 }

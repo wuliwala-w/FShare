@@ -1,11 +1,13 @@
 package controller
 
 import (
+	"FShare/dao"
 	"FShare/models"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"path/filepath"
+	"strconv"
 )
 
 /*
@@ -40,20 +42,47 @@ func IndexHandler(context *gin.Context) {
 func DownloadFile(context *gin.Context) {
 	filename, _ := context.Params.Get("fileName")
 	node, _ := context.Params.Get("destNode")
-	if err := models.DownloadFile(context, node, filename); err != nil {
+	ip := models.GetHostIp()
+	applyOwner := fmt.Sprintf("%v", models.Ip2Node[ip])
+	if err := models.DownloadFile(context, node, filename, applyOwner); err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-	} else {
-		context.JSON(http.StatusOK, gin.H{"file": "success download"})
 	}
+	//else {
+	//	context.JSON(http.StatusOK, gin.H{"file": "success download"})
+	//}
+}
+
+func DownloadLocal(context *gin.Context) {
+	filename, _ := context.Params.Get("fileName")
+	if err := models.DownloadLocalFile(context, filename); err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	}
+	//else {
+	//	context.JSON(http.StatusOK, gin.H{"file": "success download"})
+	//}
+}
+
+func DownloadTransformedFile(context *gin.Context) {
+	filename, _ := context.Params.Get("fileName")
+	node, _ := context.Params.Get("destNode")
+	applyOwner, _ := context.Params.Get("applyOwner")
+	if err := models.DownloadFile(context, node, filename, applyOwner); err != nil {
+		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	}
+	//else {
+	//	context.JSON(http.StatusOK, gin.H{"file": "success download"})
+	//}
 }
 
 func Download(context *gin.Context) {
 	filename, _ := context.Params.Get("fileName")
-	if err := models.Download(context, filename); err != nil {
+	applyOnwer, _ := context.Params.Get("applyOwner")
+	if err := models.Download(context, filename, applyOnwer); err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-	} else {
-		context.JSON(http.StatusOK, gin.H{"file": "success download"})
 	}
+	//else {
+	//	context.JSON(http.StatusOK, gin.H{"file": "success download"})
+	//}
 }
 
 func IndexHandlerv4(context *gin.Context) {
@@ -103,8 +132,14 @@ func GetFileByID(context *gin.Context) {
 		context.JSON(http.StatusOK, gin.H{"error": "id not exist"})
 		return
 	}
+	fileOwner, ok1 := context.Params.Get("file_owner")
+	if !ok1 {
+		context.JSON(http.StatusOK, gin.H{"error": "file owner not exist"})
+		return
+	}
+
 	//查询数据库是否有这个id
-	file, err := models.GetFileByID(id)
+	file, err := models.GetFileByID(id, fileOwner)
 	if err != nil {
 		context.JSON(http.StatusOK, gin.H{"error": err.Error()})
 		return
@@ -120,8 +155,14 @@ func UpdateStatus(context *gin.Context) {
 		context.JSON(http.StatusOK, gin.H{"error": "id not exist"})
 		return
 	}
+
+	fileOwner, ok1 := context.Params.Get("file_owner")
+	if !ok1 {
+		context.JSON(http.StatusOK, gin.H{"error": "file owner not exist"})
+		return
+	}
 	//查询数据库是否有这个id
-	file, err := models.GetFileByID(id)
+	file, err := models.GetFileByID(id, fileOwner)
 	if err != nil {
 		context.JSON(http.StatusOK, gin.H{"error": err.Error()})
 		return
@@ -149,18 +190,78 @@ func UpdateApplyStatus(context *gin.Context) {
 		context.JSON(http.StatusOK, gin.H{"error": "owner not exist"})
 		return
 	}
+	fileOwner, ok := context.Params.Get("file_owner")
+	if !ok {
+		context.JSON(http.StatusOK, gin.H{"error": "file owner not exist"})
+		return
+	}
 	//查询数据库是否有这个id
-	apply, err := models.GetApply(id, owner)
+	apply, err := models.GetApply(id, owner, fileOwner)
 	if err != nil {
 		context.JSON(http.StatusOK, gin.H{"error": err.Error()})
 		return
 	}
 	//放入变量
-	_ = context.BindJSON(&apply)
+	//_ = context.BindJSON(&apply)
+	Status, ok := context.Params.Get("status")
+	if !ok {
+		context.JSON(http.StatusOK, gin.H{"error": "status not exist"})
+	}
+	apply.Status, _ = strconv.Atoi(Status)
 	applyrecord := new(models.Applyrecord)
-	_ = context.BindJSON(&applyrecord)
+	//_ = context.BindJSON(&applyrecord)
 	//新信息保存到数据库
-	err = models.UpdateApply(apply, applyrecord)
+	if apply.Status == 3 {
+		apply.IsHandled = true
+		err = dao.DB.Save(apply).Error
+		if err != nil {
+			context.JSON(http.StatusOK, gin.H{"error": err.Error()})
+		} else {
+			context.JSON(http.StatusOK, apply)
+		}
+	} else {
+		err = models.UpdateApply(apply, applyrecord)
+		if err != nil {
+			context.JSON(http.StatusOK, gin.H{"error": err.Error()})
+		} else {
+			context.JSON(http.StatusOK, apply)
+		}
+	}
+
+}
+
+func UpdatePrivacyBudget(context *gin.Context) {
+	//拿到请求里的id
+	id, ok := context.Params.Get("id")
+	if !ok {
+		context.JSON(http.StatusOK, gin.H{"error": "id not exist"})
+		return
+	}
+	owner, ok := context.Params.Get("applyOwner")
+	if !ok {
+		context.JSON(http.StatusOK, gin.H{"error": "owner not exist"})
+		return
+	}
+	fileOwner, ok := context.Params.Get("file_owner")
+	if !ok {
+		context.JSON(http.StatusOK, gin.H{"error": "file owner not exist"})
+		return
+	}
+	epsilon, ok := context.Params.Get("epsilon")
+	if !ok {
+		context.JSON(http.StatusOK, gin.H{"error": "epsilon not exist"})
+		return
+	}
+	//查询数据库是否有这个id
+	apply, err := models.GetApply(id, owner, fileOwner)
+	if err != nil {
+		context.JSON(http.StatusOK, gin.H{"error": err.Error()})
+		return
+	}
+	//放入变量
+	//_ = context.BindJSON(&apply)
+	//新信息保存到数据库
+	err = models.UpdataPrivacyBudget(apply, epsilon)
 	if err != nil {
 		context.JSON(http.StatusOK, gin.H{"error": err.Error()})
 	} else {
@@ -179,8 +280,13 @@ func DeleteApply(context *gin.Context) {
 		context.JSON(http.StatusOK, gin.H{"error": "id not exist"})
 		return
 	}
+	fileOwner, ok := context.Params.Get("file_owner")
+	if !ok {
+		context.JSON(http.StatusOK, gin.H{"error": "file owner not exist"})
+		return
+	}
 	//查询数据库是否有这个id并删除
-	if err := models.DeleteApply(id, owner); err != nil {
+	if err := models.DeleteApply(id, owner, fileOwner); err != nil {
 		context.JSON(http.StatusOK, gin.H{"error": err.Error()})
 	} else {
 		context.JSON(http.StatusOK, gin.H{id: "deleted"})
@@ -193,8 +299,13 @@ func DeleteAFile(context *gin.Context) {
 		context.JSON(http.StatusOK, gin.H{"error": "id not exist"})
 		return
 	}
+	fileOwner, ok := context.Params.Get("file_owner")
+	if !ok {
+		context.JSON(http.StatusOK, gin.H{"error": "file owner not exist"})
+		return
+	}
 	//查询数据库是否有这个id并删除
-	if err := models.DeleteAFileByID(id); err != nil {
+	if err := models.DeleteAFileByID(id, fileOwner); err != nil {
 		context.JSON(http.StatusOK, gin.H{
 			"error": err.Error(),
 			"file":  id,
@@ -223,6 +334,12 @@ func GetFingerPrint(context *gin.Context) {
 		context.JSON(http.StatusOK, gin.H{"error": "type of file is not exist"})
 		return
 	}
+	//todo:隐私预算变化
+	privacybudget := "0" // 哨兵
+	//privacybudget, ok := context.Params.Get("epsilon")
+	//if !ok {
+	//	context.JSON(http.StatusOK, gin.H{"error": "epsilon is not exist"})
+	//}
 	//根据文件类型查找到文件的具体路径
 	filepath, err := models.GetVerifyFile(filetype)
 	if err != nil {
@@ -231,7 +348,7 @@ func GetFingerPrint(context *gin.Context) {
 			"filetype": filetype,
 		})
 	} else {
-		TxHash, fingerprint, fileId, err := models.ExtractFingerPrint(filepath)
+		TxHash, fingerprint, fileId, err := models.ExtractFingerPrint(filepath, privacybudget)
 		fmt.Println(filepath, fingerprint, fileId)
 		if err != nil {
 			context.JSON(http.StatusOK, gin.H{"error": err.Error()})
@@ -257,16 +374,17 @@ func TraceBackOnChain(context *gin.Context) {
 		context.JSON(http.StatusOK, gin.H{"error": "source error"})
 		return
 	}
-	sourceNode = "G"
 	//传入文件区块链哈希
-	if applydatalist, filedata, checkdata, err := models.TraceBackOnChain(txHash, sourceNode); err != nil {
+	if applydatalist, checkdata, sourceNodeV, FingerprintNode, IsLegal, err := models.TraceBackOnChain(txHash, sourceNode); err != nil {
 		context.JSON(http.StatusOK, gin.H{"error": err.Error()})
 	} else {
 		context.JSON(http.StatusOK, gin.H{
-			"status":        "Trace back success",
-			"checkdata":     checkdata,
-			"filedata":      filedata,
-			"applydatalist": applydatalist,
+			"status":          "Trace back success",
+			"isLegal":         IsLegal,
+			"sourceNode":      sourceNodeV,
+			"fingerprintNode": FingerprintNode,
+			"checkdata":       checkdata,
+			"applydatalist":   applydatalist,
 		})
 	}
 }
@@ -285,7 +403,13 @@ func UploadFileLocal2(context *gin.Context) {
 // Utility 进行效用分析
 func Utility(context *gin.Context) {
 	dirPth := fmt.Sprintf("./analysisfile/analysisfile.csv")
-	_, _, fileid, err := models.ExtractFingerPrint(dirPth)
+	privacybudget := "0" //哨兵
+	//todo:隐私预算变化
+	//privacybudget, ok := context.Params.Get("epsilon")
+	//if !ok {
+	//	context.JSON(http.StatusOK, gin.H{"error": "epsilon is not exist"})
+	//}
+	_, _, fileid, err := models.ExtractFingerPrint(dirPth, privacybudget)
 	//if err != nil {
 	//	context.JSON(http.StatusOK, gin.H{"error": err.Error()})
 	//}
@@ -368,7 +492,7 @@ func DownloadModelFile(context *gin.Context) {
 		}
 	}
 
-	context.JSON(http.StatusOK, gin.H{"file": "success download"})
+	//context.JSON(http.StatusOK, gin.H{"file": "success download"})
 }
 
 func DownloadModel(context *gin.Context) {
@@ -376,7 +500,17 @@ func DownloadModel(context *gin.Context) {
 	Type, _ := context.Params.Get("Type")
 	if err := models.DownloadModel(context, modelname, Type); err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	}
+	//else {
+	//	context.JSON(http.StatusOK, gin.H{"file": "success download"})
+	//}
+}
+
+// 将申请到的文件进行添加
+func AddFile(context *gin.Context) {
+	if err := models.AddFile(context); err != nil {
+		context.JSON(http.StatusOK, gin.H{"error": err.Error()})
 	} else {
-		context.JSON(http.StatusOK, gin.H{"file": "success download"})
+		context.JSON(http.StatusOK, gin.H{"file": "success"})
 	}
 }
